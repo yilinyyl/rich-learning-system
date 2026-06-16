@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-16.2";
+const APP_VERSION = "2026-06-16.3";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let supabaseClient = null;
@@ -362,7 +362,24 @@ function readableDate(dateKey) {
   });
 }
 
+function activeOnlineInsights() {
+  return onlineInsights.length ? onlineInsights : Array.isArray(state.onlineInsights) ? state.onlineInsights : [];
+}
+
+function insightIdentityExamples() {
+  return pickDailyItems(activeOnlineInsights(), 4, Number(state.actionIndex || 0)).map((item) =>
+    `我是一个会从网上资料提炼机会的人，所以我今天从 ${item.source} 学到：${item.summary}。我先问它服务谁、解决什么痛点。`
+  );
+}
+
 function richLifeLines() {
+  const insights = activeOnlineInsights();
+  if (insights.length) {
+    return pickDailyItems(insights, 4, 2).map((item) =>
+      `我是一个把信息变成选择权的人，所以我看到「${item.title}」时，不只是看热闹，而是思考它如何节省时间、降低麻烦或创造收入。`
+    );
+  }
+
   const day = dailyOffset();
   const lines = [];
   for (let i = 0; i < 4; i += 1) {
@@ -413,7 +430,8 @@ function render() {
   document.querySelector("#evidenceText").value = state.evidence || "";
   const examples = document.querySelector("#examples");
   examples.innerHTML = "";
-  const examplePool = [...action.examples, ...extraExamples];
+  const onlineIdentityExamples = insightIdentityExamples();
+  const examplePool = onlineIdentityExamples.length ? onlineIdentityExamples : [...action.examples, ...extraExamples];
   const dailyExamples = pickDailyItems(examplePool, 4, Number(state.actionIndex || 0));
   dailyExamples.forEach((example) => {
     const item = document.createElement("div");
@@ -433,7 +451,7 @@ function render() {
 
   const keyPointRoot = document.querySelector("#keyPoints");
   keyPointRoot.innerHTML = "";
-  const liveItems = onlineInsights.length ? onlineInsights : state.onlineInsights || [];
+  const liveItems = activeOnlineInsights();
   if (liveItems.length) {
     pickDailyItems(liveItems, 3).forEach((point) => keyPointRoot.append(linkedPoint(point)));
   } else {
