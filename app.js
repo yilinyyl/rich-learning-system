@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-16.6";
+const APP_VERSION = "2026-06-16.7";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -77,32 +77,6 @@ const extraExamples = [
   "我是一个保护注意力的人，所以我今天练习了专注，没有让手机拿走我的注意力。"
 ];
 
-const richLifeIdentities = [
-  "有选择权的人",
-  "会保护注意力的人",
-  "重视身体的人",
-  "专注创造的人",
-  "自由旅行的人",
-  "慷慨的人",
-  "有空间的人",
-  "不被小钱困住的人",
-  "能说不的人",
-  "真正富有的人"
-];
-
-const richLifeFreedoms = [
-  "不用把最好的精力交给洗衣、扫地、洗碗和做饭这些重复琐事",
-  "可以把清洁、维修、预约、整理这些低价值事务交给服务或系统",
-  "有时间健身、瑜伽、冥想、睡好觉，而不是永远赶时间",
-  "可以把上午最清醒的时间留给学习、思考、创造和重要决定",
-  "旅行时可以选择舒服的航班、可靠的酒店、好的向导和更少折腾",
-  "有能力照顾家人、支持教育、捐钱，也不因为钱委屈价值观",
-  "家里有书、干净桌面、安静角落和让心稳定下来的秩序",
-  "买健康食物、课程、工具和帮助时，更在意长期价值",
-  "可以拒绝消耗自己的关系、请求、工作和安排",
-  "让钱服务于自由、健康、爱、学习、创造和贡献"
-];
-
 const richLifeSearches = [
   { lang: "zh", source: "Wikipedia 中文", query: "家族办公室 财富管理", lens: "财富架构" },
   { lang: "zh", source: "Wikipedia 中文", query: "私人银行 高净值人士", lens: "专业服务" },
@@ -115,6 +89,39 @@ const richLifeSearches = [
   { lang: "en", source: "Wikipedia", query: "concierge lifestyle management", lens: "生活支持" },
   { lang: "en", source: "Wikipedia", query: "philanthropy foundation wealth", lens: "影响力" }
 ];
+
+const richLifeSceneParts = {
+  travel: {
+    identities: ["能自由旅行的人", "可以舒服出行的人", "有选择权旅行的人"],
+    scenes: ["我去到一个国家时，可以住舒服的五星级酒店", "我可以坐商务舱或头等舱，把旅程本身也变成休息", "我可以临时安排一次回东南亚的旅行，不需要为了钱一直犹豫"],
+    actions: ["先查一个我想去的城市", "学一句当地语言", "写下我想体验的一家酒店"]
+  },
+  support: {
+    identities: ["不用被琐事拖住的人", "把生活安排得很轻松的人", "有生活支持系统的人"],
+    scenes: ["洗衣、打扫、做饭、预约这些事都有可靠的人或服务帮我处理", "我的时间不用被一堆小事切碎", "我的家干净、安静、有书、有运动空间，也有人帮我维持秩序"],
+    actions: ["找出一件可以外包或简化的小事", "整理一个让我更省心的流程", "把房间里一个角落收干净"]
+  },
+  learning: {
+    identities: ["有时间学习世界的人", "可以慢慢学语言和文化的人", "把旅行变成学习的人"],
+    scenes: ["我可以在一个国家住久一点，请当地老师教我语言和文化", "我可以上午上课，下午散步，晚上安静读书", "我可以去巴厘岛学瑜伽，也可以去尼泊尔练冥想"],
+    actions: ["学一个新词", "收藏一个想上的课程", "写一句我今天学到的东西"]
+  },
+  giving: {
+    identities: ["有能力慷慨的人", "可以稳定捐钱的人", "让钱也服务善意的人"],
+    scenes: ["我可以每年认真捐一笔钱，而不是只在有余力时才善良", "我可以支持教育、贫困、健康或环境项目", "我可以照顾家人，也可以帮助陌生人过得好一点"],
+    actions: ["写下一个我想支持的对象", "存下一点未来捐赠基金", "查一个可靠的公益项目"]
+  },
+  assets: {
+    identities: ["有被动收入的人", "让钱慢慢替我工作的人", "资产越来越清楚的人"],
+    scenes: ["我的生活费不只靠工资，也有资产和系统在支持我", "我可以安心健身、读书、旅行，因为现金流是清楚的", "我拥有自己的房子和长期资产，不需要每天为生存紧张"],
+    actions: ["记录一笔钱", "看一眼储蓄进度", "写下一个未来资产目标"]
+  },
+  body: {
+    identities: ["有时间照顾身体的人", "健康又自由的人", "把身体放在第一位的人"],
+    scenes: ["我可以固定健身、冥想、睡好觉，不用一直赶时间", "我可以请教练、上瑜伽课、吃健康食物", "我的身体不是被工作消耗完，而是被生活好好照顾"],
+    actions: ["走路 10 分钟", "做 5 分钟伸展", "安静呼吸 5 分钟"]
+  }
+};
 
 const fallbackKeyPoints = [
   {
@@ -318,6 +325,47 @@ function richLifeLesson(title, snippet, lens) {
   return "真正的富有像一个支持系统：专业人士、稳定现金流、生活外包、健康安排、学习时间和自由选择。";
 }
 
+function richLifeTheme(item) {
+  const text = `${item?.title || ""} ${item?.rawPoint || ""} ${item?.summary || ""}`.toLowerCase();
+  if (/travel|hotel|aviation|business class|first class|商务舱|头等舱|旅行|酒店|航空/.test(text)) return "travel";
+  if (/concierge|lifestyle|service|礼宾|服务|生活/.test(text)) return "support";
+  if (/philanthropy|charity|foundation|慈善|公益|基金会|捐/.test(text)) return "giving";
+  if (/asset|portfolio|investment|wealth|banking|office|资产|投资|财富|银行|家族办公室/.test(text)) return "assets";
+  return ["travel", "support", "learning", "giving", "assets", "body"][(dailyOffset() + Number(state?.richLifeSpin || 0)) % 6];
+}
+
+function partFrom(list, salt) {
+  return list[(dailyOffset() + Number(state.richLifeSpin || 0) + Number(state.actionIndex || 0) + salt) % list.length];
+}
+
+function richLifeThemeSet(theme) {
+  return richLifeSceneParts[theme] || richLifeSceneParts.travel;
+}
+
+function simpleRichLifeSentence(theme, index) {
+  const set = richLifeThemeSet(theme);
+  const identity = partFrom(set.identities, index);
+  const scene = partFrom(set.scenes, index * 2);
+  return `我是一个${identity}，所以${scene}。`;
+}
+
+function simpleEvidenceSentence(theme, index) {
+  const set = richLifeThemeSet(theme);
+  const identity = partFrom(set.identities, index);
+  const action = partFrom(set.actions, index * 2);
+  return `我是一个${identity}，所以我今天只做一件小事：${action}。`;
+}
+
+function richLifeThemes(count) {
+  const insights = activeRichLifeInsights();
+  const themes = insights.length ? pickDailyItems(insights, count, Number(state.richLifeSpin || 0)).map(richLifeTheme) : [];
+  const fallback = ["travel", "support", "learning", "giving", "assets", "body"];
+  while (themes.length < count) {
+    themes.push(fallback[(dailyOffset() + Number(state.richLifeSpin || 0) + themes.length) % fallback.length]);
+  }
+  return themes;
+}
+
 function richLifeInsightFromWiki(page, search) {
   const title = cleanTitle(page.title);
   const rawPoint = cleanSnippet(page.snippet);
@@ -383,9 +431,9 @@ async function fetchOnlineInsights() {
 
 async function fetchRichLifeInsights() {
   const status = document.querySelector("#richLifeStatus");
-  if (status) status.textContent = `正在抓取公开财富资料... ${new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`;
+  if (status) status.textContent = `正在给你换几句新的生活画面... ${new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`;
 
-  const searches = pickDailyItems(richLifeSearches, 6, Number(state.actionIndex || 0));
+  const searches = pickDailyItems(richLifeSearches, 6, Number(state.actionIndex || 0) + Number(state.richLifeSpin || 0));
   const requests = searches.map((search) =>
     fetchJson(wikiSearchUrl(search)).then((data) =>
       ((data.query && data.query.search) || [])
@@ -408,8 +456,8 @@ async function fetchRichLifeInsights() {
 
   if (status) {
     status.textContent = richLifeInsights.length
-      ? `已更新 ${richLifeInsights.length} 条公开财富资料。每次刷新会换一组主题。`
-      : `这次公开资料没有连上，先显示离线备用句子。失败来源：${failedCount}/${results.length}`;
+      ? "已换成新的简单生活句子。"
+      : `这次网上灵感没有连上，先显示离线生活句子。失败来源：${failedCount}/${results.length}`;
   }
   render();
 }
@@ -485,38 +533,12 @@ function activeRichLifeInsights() {
   return items.filter((item) => !/gdelt|github|dev article/i.test(String(item.source || "")));
 }
 
-function identitySentenceFromRichLife(item, index) {
-  const templates = [
-    () => `我是一个会学习真正财富结构的人，所以我今天从「${item.title}」学到：${item.summary}`,
-    () => `我是一个会创造机会的人，所以我把「${item.title}」变成一个问题：谁愿意付钱让这件事更省心、更可靠、更节省时间？`,
-    () => `我是一个会观察高价值服务的人，所以我今天看到：${item.rawPoint || item.summary} 我先练习看懂它背后的需求。`,
-    () => `我是一个把梦想变成系统的人，所以我今天不急着变有钱，我先学会一个富有世界的词：「${item.title}」。`,
-    () => `我是一个会保护时间的人，所以我从「${item.title}」提醒自己：以后要把重复、琐碎、消耗精力的事交给流程或专业人士。`,
-    () => `我是一个慢慢靠近富有生活的人，所以我今天只做一件事：用自己的话解释「${item.title}」为什么和自由有关。`
-  ];
-  return templates[(dailyOffset() + Number(state.actionIndex || 0) + index) % templates.length]();
-}
-
 function insightIdentityExamples() {
-  return pickDailyItems(activeRichLifeInsights(), 6, Number(state.actionIndex || 0)).map(identitySentenceFromRichLife);
+  return richLifeThemes(4).map(simpleEvidenceSentence);
 }
 
 function richLifeLines() {
-  const insights = activeRichLifeInsights();
-  if (insights.length) {
-    return pickDailyItems(insights, 4, 2).map((item) =>
-      `我是一个学习真正财富结构的人，所以我从「${item.title}」看到：${item.summary}`
-    );
-  }
-
-  const day = dailyOffset();
-  const lines = [];
-  for (let i = 0; i < 4; i += 1) {
-    const identity = richLifeIdentities[(day + i * 2) % richLifeIdentities.length];
-    const freedom = richLifeFreedoms[(day * 2 + i * 3) % richLifeFreedoms.length];
-    lines.push(`我是一个${identity}，所以我${freedom}。`);
-  }
-  return lines;
+  return richLifeThemes(4).map(simpleRichLifeSentence);
 }
 
 function saveEvidenceHistory() {
@@ -571,36 +593,12 @@ function render() {
 
   const richLifeRoot = document.querySelector("#richLife");
   richLifeRoot.innerHTML = "";
-  const richLifeItems = activeRichLifeInsights();
-  if (richLifeItems.length) {
-    pickDailyItems(richLifeItems, 4, 2).forEach((item) => {
-      const block = document.createElement("div");
-      block.className = "example";
-      const link = document.createElement("a");
-      link.href = item.url;
-      link.target = "_blank";
-      link.rel = "noreferrer";
-      link.textContent = "打开来源";
-      const title = document.createElement("strong");
-      title.textContent = item.title;
-      block.append(title);
-      block.append(document.createElement("br"));
-      block.append(`资料重点：${item.rawPoint || item.summary}`);
-      block.append(document.createElement("br"));
-      block.append(`财富理解：${item.summary}`);
-      block.append(document.createElement("br"));
-      block.append(`${item.domain || item.source} · `);
-      block.append(link);
-      richLifeRoot.append(block);
-    });
-  } else {
-    richLifeLines().forEach((line) => {
+  richLifeLines().forEach((line) => {
     const item = document.createElement("div");
     item.className = "example";
     item.textContent = line;
     richLifeRoot.append(item);
-    });
-  }
+  });
 
   const keyPointRoot = document.querySelector("#keyPoints");
   keyPointRoot.innerHTML = "";
@@ -701,9 +699,12 @@ function bindEvents() {
   if (refreshRichLifeBtn) {
     refreshRichLifeBtn.addEventListener("click", () => {
       const status = document.querySelector("#richLifeStatus");
-      if (status) status.textContent = "已点击刷新，正在连接资料来源...";
+      state.richLifeSpin = Number(state.richLifeSpin || 0) + 1;
+      saveState();
+      render();
+      if (status) status.textContent = "正在换几句新的生活画面...";
       fetchRichLifeInsights().catch(() => {
-        if (status) status.textContent = "公开财富资料暂时抓不到，先用离线备用句子。";
+        if (status) status.textContent = "网上灵感暂时抓不到，已经先换成离线生活句子。";
       });
     });
   }
@@ -942,6 +943,6 @@ fetchOnlineInsights().catch(() => {
 });
 fetchRichLifeInsights().catch(() => {
   const status = document.querySelector("#richLifeStatus");
-  if (status) status.textContent = "公开财富资料暂时抓不到，先用离线备用句子。";
+  if (status) status.textContent = "网上灵感暂时抓不到，先显示简单生活句子。";
   render();
 });
