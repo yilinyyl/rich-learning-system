@@ -1,0 +1,19 @@
+{
+  "name": "一亿自由飞行系统",
+  "short_name": "自由飞行",
+  "description": "一个安静的后端型财富复利系统。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fbfaf5",
+  "theme_color": "#17211b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
