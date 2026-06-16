@@ -76,17 +76,30 @@ const extraExamples = [
   "我是一个保护注意力的人，所以我今天练习了专注，没有让手机拿走我的注意力。"
 ];
 
-const richLife = [
-  "我是一个有选择权的人，所以我的时间不会被洗衣、扫地、洗碗、做饭和杂事全部占满。",
-  "我是一个会把琐碎外包的人，所以我把低价值重复事务交给服务、系统或自动化。",
-  "我是一个重视身体的人，所以我有时间健身、瑜伽、冥想、睡好觉，而不是一直赶时间。",
-  "我是一个专注创造的人，所以我每天最好的精力用来学习、思考、写作、投资、做项目和帮助别人。",
-  "我是一个自由旅行的人，所以我可以选择更舒服的航班、安静的酒店、可靠的司机和好的向导。",
-  "我是一个慷慨的人，所以我有能力照顾家人、捐钱、支持教育，也不因为钱而委屈自己的价值观。",
-  "我是一个有空间的人，所以我的家里有书、干净的桌子、安静的角落和让心稳定下来的秩序。",
-  "我是一个不用为小钱紧张的人，所以买健康食物、课程、工具、旅行和帮助时，我更看重价值。",
-  "我是一个能说不的人，所以我不需要接受所有消耗我的人、事、工作和关系。",
-  "我是一个真正富有的人，所以我的钱服务于自由、健康、爱、学习、创造和贡献。"
+const richLifeIdentities = [
+  "有选择权的人",
+  "会保护注意力的人",
+  "重视身体的人",
+  "专注创造的人",
+  "自由旅行的人",
+  "慷慨的人",
+  "有空间的人",
+  "不被小钱困住的人",
+  "能说不的人",
+  "真正富有的人"
+];
+
+const richLifeFreedoms = [
+  "不用把最好的精力交给洗衣、扫地、洗碗和做饭这些重复琐事",
+  "可以把清洁、维修、预约、整理这些低价值事务交给服务或系统",
+  "有时间健身、瑜伽、冥想、睡好觉，而不是永远赶时间",
+  "可以把上午最清醒的时间留给学习、思考、创造和重要决定",
+  "旅行时可以选择舒服的航班、可靠的酒店、好的向导和更少折腾",
+  "有能力照顾家人、支持教育、捐钱，也不因为钱委屈价值观",
+  "家里有书、干净桌面、安静角落和让心稳定下来的秩序",
+  "买健康食物、课程、工具和帮助时，更在意长期价值",
+  "可以拒绝消耗自己的关系、请求、工作和安排",
+  "让钱服务于自由、健康、爱、学习、创造和贡献"
 ];
 
 const fallbackKeyPoints = [
@@ -144,9 +157,9 @@ const growthFramework = [
     links: [
       ["Y Combinator Startup School", "https://www.startupschool.org/"],
       ["YC Library", "https://www.ycombinator.com/library"],
-      ["Hacker News", "https://news.ycombinator.com/"],
-      ["Indie Hackers", "https://www.indiehackers.com/"],
-      ["Product Hunt", "https://www.producthunt.com/"]
+      ["GitHub Topics AI", "https://github.com/topics/artificial-intelligence"],
+      ["GitHub Trending", "https://github.com/trending"],
+      ["Hugging Face Models", "https://huggingface.co/models"]
     ]
   },
   {
@@ -156,7 +169,7 @@ const growthFramework = [
     links: [
       ["Kaggle Competitions", "https://www.kaggle.com/competitions"],
       ["Hugging Face Spaces", "https://huggingface.co/spaces"],
-      ["Product Hunt Launch", "https://www.producthunt.com/launch"],
+      ["GitHub New Repository", "https://github.com/new"],
       ["YC Apply", "https://www.ycombinator.com/apply"]
     ]
   },
@@ -207,10 +220,6 @@ function cleanTitle(title) {
     .slice(0, 120);
 }
 
-function onlineExample(item) {
-  return `我是一个每天接触新机会的人，所以我今天从 ${item.source} 看到「${item.title}」，并练习判断它背后有什么需求、技术或赚钱机会。`;
-}
-
 function linkedPoint(item) {
   const point = document.createElement("div");
   point.className = "example";
@@ -218,10 +227,15 @@ function linkedPoint(item) {
   anchor.href = item.url;
   anchor.target = "_blank";
   anchor.rel = "noreferrer";
-  anchor.textContent = item.title;
-  point.append("网上趋势：我今天观察到 ");
+  anchor.textContent = "打开来源";
+  const title = document.createElement("strong");
+  title.textContent = item.title;
+  point.append(title);
+  point.append(document.createElement("br"));
+  point.append(`重点：${item.summary}`);
+  point.append(document.createElement("br"));
+  point.append(`来源：${item.source} · `);
   point.append(anchor);
-  point.append(`。重点不是马上学会，而是问：它背后有什么需求、技术或赚钱机会？来源：${item.source}`);
   return point;
 }
 
@@ -245,30 +259,24 @@ async function fetchJson(url) {
 
 async function fetchOnlineInsights() {
   const status = document.querySelector("#onlineStatus");
-  if (status) status.textContent = "正在从网上抓取 AI、创业、技术资料...";
+  if (status) status.textContent = "正在抓取 GitHub 和技术文章...";
 
   const requests = [
-    fetchJson("https://hn.algolia.com/api/v1/search_by_date?query=AI%20startup&tags=story&hitsPerPage=12")
-      .then((data) =>
-        (data.hits || []).map((hit) => ({
-          source: "Hacker News",
-          title: cleanTitle(hit.title || hit.story_title),
-          url: hit.url || `https://news.ycombinator.com/item?id=${hit.objectID}`
-        }))
-      ),
     fetchJson("https://dev.to/api/articles?tag=ai&per_page=12")
       .then((data) =>
         (data || []).map((article) => ({
-          source: "DEV",
+          source: "DEV article",
           title: cleanTitle(article.title),
+          summary: cleanTitle(article.description || "这是一篇 AI 相关技术文章。先判断它解决什么问题，再决定要不要深入读。"),
           url: article.url
         }))
       ),
     fetchJson("https://api.github.com/search/repositories?q=topic:ai+stars:%3E1000&sort=updated&order=desc&per_page=10")
       .then((data) =>
         (data.items || []).map((repo) => ({
-          source: "GitHub",
-          title: cleanTitle(`${repo.full_name}: ${repo.description || "AI repository"}`),
+          source: "GitHub repository",
+          title: cleanTitle(repo.full_name),
+          summary: cleanTitle(repo.description || "这个项目正在被更新。重点观察它提供什么能力、服务谁、为什么有人给 star。"),
           url: repo.html_url
         }))
       )
@@ -278,7 +286,7 @@ async function fetchOnlineInsights() {
   onlineInsights = results
     .filter((result) => result.status === "fulfilled")
     .flatMap((result) => result.value)
-    .filter((item) => item.title && item.url);
+    .filter((item) => item.title && item.url && item.summary);
 
   state.onlineFetchedAt = new Date().toISOString();
   state.onlineInsights = onlineInsights.slice(0, 30);
@@ -354,6 +362,17 @@ function readableDate(dateKey) {
   });
 }
 
+function richLifeLines() {
+  const day = dailyOffset();
+  const lines = [];
+  for (let i = 0; i < 4; i += 1) {
+    const identity = richLifeIdentities[(day + i * 2) % richLifeIdentities.length];
+    const freedom = richLifeFreedoms[(day * 2 + i * 3) % richLifeFreedoms.length];
+    lines.push(`我是一个${identity}，所以我${freedom}。`);
+  }
+  return lines;
+}
+
 function saveEvidenceHistory() {
   const text = String(state.evidence || "").trim();
   if (!text) return;
@@ -394,12 +413,7 @@ function render() {
   document.querySelector("#evidenceText").value = state.evidence || "";
   const examples = document.querySelector("#examples");
   examples.innerHTML = "";
-  const onlineExamples = (onlineInsights.length ? onlineInsights : state.onlineInsights || [])
-    .slice(0, 18)
-    .map(onlineExample);
-  const examplePool = onlineExamples.length
-    ? [...onlineExamples, ...action.examples, ...extraExamples]
-    : [...action.examples, ...extraExamples];
+  const examplePool = [...action.examples, ...extraExamples];
   const dailyExamples = pickDailyItems(examplePool, 4, Number(state.actionIndex || 0));
   dailyExamples.forEach((example) => {
     const item = document.createElement("div");
@@ -410,7 +424,7 @@ function render() {
 
   const richLifeRoot = document.querySelector("#richLife");
   richLifeRoot.innerHTML = "";
-  pickDailyItems(richLife, 4, 1).forEach((line) => {
+  richLifeLines().forEach((line) => {
     const item = document.createElement("div");
     item.className = "example";
     item.textContent = line;
