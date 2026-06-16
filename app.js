@@ -1,4 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
+const APP_VERSION = "2026-06-16.2";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let supabaseClient = null;
@@ -362,6 +363,8 @@ function saveEvidenceHistory() {
 
 function render() {
   const action = currentAction();
+  const version = document.querySelector("#appVersion");
+  if (version) version.textContent = `版本 ${APP_VERSION}`;
   document.querySelector("#todayLabel").textContent = new Date().toLocaleDateString("zh-CN", {
     month: "long",
     day: "numeric",
@@ -514,6 +517,10 @@ function bindEvents() {
 async function setupCloud() {
   if (!cloudIsConfigured()) {
     setCloudStatus("未连接云端：还没有设置 Supabase。现在只会存在本机。");
+    const loginBtn = document.querySelector("#loginBtn");
+    const emailInput = document.querySelector("#emailInput");
+    if (loginBtn) loginBtn.disabled = true;
+    if (emailInput) emailInput.disabled = true;
     return;
   }
 
@@ -547,13 +554,18 @@ function updateCloudUi() {
   } else {
     setCloudStatus("Supabase 已设置，但还没登录。输入 email 后，同一个 email 可在其他手机恢复历史。");
     if (loginBtn) loginBtn.hidden = false;
+    if (loginBtn) loginBtn.disabled = false;
     if (emailInput) emailInput.hidden = false;
+    if (emailInput) emailInput.disabled = false;
     if (logoutBtn) logoutBtn.hidden = true;
   }
 }
 
 async function sendLoginLink() {
-  if (!supabaseClient) return;
+  if (!supabaseClient) {
+    setCloudStatus("不能发送登录链接：Supabase 还没设置好。请先确认 config.js 已填入 Project URL 和 anon public key，并已发布到 GitHub Pages。");
+    return;
+  }
   const email = String(document.querySelector("#emailInput")?.value || "").trim();
 
   if (!email) {
