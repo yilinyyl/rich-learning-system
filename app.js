@@ -1,7 +1,8 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-16.3";
+const APP_VERSION = "2026-06-16.4";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
+let richLifeInsights = [];
 let supabaseClient = null;
 let currentUser = null;
 let cloudSaveTimer = null;
@@ -251,6 +252,40 @@ function fallbackPoint(item) {
   return point;
 }
 
+function gdeltUrl(query) {
+  const params = new URLSearchParams({
+    query,
+    mode: "ArtList",
+    format: "json",
+    maxrecords: "8",
+    sort: "HybridRel"
+  });
+  return `https://api.gdeltproject.org/api/v2/doc/doc?${params.toString()}`;
+}
+
+function richLifeSummary(article) {
+  const title = cleanTitle(article.title);
+  const domain = cleanTitle(article.domain || article.source || "online source");
+  const lower = `${title} ${domain}`.toLowerCase();
+
+  if (lower.includes("family office")) {
+    return "真正的大财富通常不是一个人硬扛，而是用 family office 或专业团队管理投资、税务、法律、房产、旅行、慈善和传承。";
+  }
+  if (lower.includes("philanthropy") || lower.includes("charity") || lower.includes("foundation")) {
+    return "有钱人的世界里，捐赠不是临时善心，而是可以被规划、衡量和长期执行的影响力系统。";
+  }
+  if (lower.includes("travel") || lower.includes("hotel") || lower.includes("aviation") || lower.includes("jet")) {
+    return "高端旅行真正买的是少折腾、节省精力、可靠安排、隐私、安全和抵达后的状态。";
+  }
+  if (lower.includes("wealth management") || lower.includes("portfolio") || lower.includes("asset")) {
+    return "富有不是只有收入，而是有人持续管理资产、风险、现金流、税务、继承和长期选择权。";
+  }
+  if (lower.includes("luxury") || lower.includes("ultra")) {
+    return "奢侈品只是表面；更深层的富有是稀缺时间、空间、隐私、健康服务和被高质量照顾。";
+  }
+  return "真正的富有更像一个支持系统：专业人士、资产配置、生活外包、健康安排、旅行规划和长期自由。";
+}
+
 async function fetchJson(url) {
   const response = await fetch(url, { cache: "no-store" });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -296,6 +331,43 @@ async function fetchOnlineInsights() {
     status.textContent = onlineInsights.length
       ? `已更新 ${onlineInsights.length} 条网上资料。每天打开会尽量刷新；如果失败会用备用重点。`
       : "这次没有抓到网上资料，先显示备用重点。";
+  }
+  render();
+}
+
+async function fetchRichLifeInsights() {
+  const status = document.querySelector("#richLifeStatus");
+  if (status) status.textContent = "正在抓取财富生活相关资料...";
+
+  const requests = [
+    fetchJson(gdeltUrl('"family office" wealth management')),
+    fetchJson(gdeltUrl('"high net worth" philanthropy')),
+    fetchJson(gdeltUrl('"luxury travel" "high net worth"')),
+    fetchJson(gdeltUrl('"wealth management" "estate planning"'))
+  ];
+
+  const results = await Promise.allSettled(requests);
+  richLifeInsights = results
+    .filter((result) => result.status === "fulfilled")
+    .flatMap((result) => result.value.articles || [])
+    .map((article) => ({
+      source: "GDELT article",
+      title: cleanTitle(article.title),
+      summary: richLifeSummary(article),
+      url: article.url,
+      domain: article.domain
+    }))
+    .filter((item) => item.title && item.url && item.summary)
+    .slice(0, 30);
+
+  state.richLifeFetchedAt = new Date().toISOString();
+  state.richLifeInsights = richLifeInsights;
+  saveState();
+
+  if (status) {
+    status.textContent = richLifeInsights.length
+      ? `已更新 ${richLifeInsights.length} 条财富生活资料。`
+      : "这次没有抓到财富生活资料，先用备用句子。";
   }
   render();
 }
@@ -366,6 +438,10 @@ function activeOnlineInsights() {
   return onlineInsights.length ? onlineInsights : Array.isArray(state.onlineInsights) ? state.onlineInsights : [];
 }
 
+function activeRichLifeInsights() {
+  return richLifeInsights.length ? richLifeInsights : Array.isArray(state.richLifeInsights) ? state.richLifeInsights : [];
+}
+
 function insightIdentityExamples() {
   return pickDailyItems(activeOnlineInsights(), 4, Number(state.actionIndex || 0)).map((item) =>
     `我是一个会从网上资料提炼机会的人，所以我今天从 ${item.source} 学到：${item.summary}。我先问它服务谁、解决什么痛点。`
@@ -373,10 +449,10 @@ function insightIdentityExamples() {
 }
 
 function richLifeLines() {
-  const insights = activeOnlineInsights();
+  const insights = activeRichLifeInsights();
   if (insights.length) {
     return pickDailyItems(insights, 4, 2).map((item) =>
-      `我是一个把信息变成选择权的人，所以我看到「${item.title}」时，不只是看热闹，而是思考它如何节省时间、降低麻烦或创造收入。`
+      `我是一个学习真正财富结构的人，所以我从「${item.title}」看到：${item.summary}`
     );
   }
 
@@ -540,6 +616,16 @@ function bindEvents() {
       fetchOnlineInsights().catch(() => {
         const status = document.querySelector("#onlineStatus");
         if (status) status.textContent = "网上资料暂时抓不到，先用备用 key points。";
+      });
+    });
+  }
+
+  const refreshRichLifeBtn = document.querySelector("#refreshRichLifeBtn");
+  if (refreshRichLifeBtn) {
+    refreshRichLifeBtn.addEventListener("click", () => {
+      fetchRichLifeInsights().catch(() => {
+        const status = document.querySelector("#richLifeStatus");
+        if (status) status.textContent = "财富生活资料暂时抓不到，先用备用句子。";
       });
     });
   }
@@ -770,8 +856,14 @@ bindEvents();
 bindPwaInstall();
 setupCloud();
 onlineInsights = Array.isArray(state.onlineInsights) ? state.onlineInsights : [];
+richLifeInsights = Array.isArray(state.richLifeInsights) ? state.richLifeInsights : [];
 fetchOnlineInsights().catch(() => {
   const status = document.querySelector("#onlineStatus");
   if (status) status.textContent = "网上资料暂时抓不到，先用备用 key points。";
+  render();
+});
+fetchRichLifeInsights().catch(() => {
+  const status = document.querySelector("#richLifeStatus");
+  if (status) status.textContent = "财富生活资料暂时抓不到，先用备用句子。";
   render();
 });
