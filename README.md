@@ -37,6 +37,7 @@ C:\Users\Internet\Documents\rich!\index.html
 6. 上传或 push 文件后，打开 `Actions`，等待 `Deploy GitHub Pages` 运行完成。
 7. 打开 `Settings` -> `Pages`，复制 GitHub 生成的 HTTPS 网址。
 
+Updated for GitHub Pages.
 手机打开这个 HTTPS 网址后：
 
 - iPhone Safari：分享按钮，选择“加入主屏幕”。
