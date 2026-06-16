@@ -46,6 +46,7 @@ if (-not $changes) {
 
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm"
 Invoke-Git @("-c", "user.name=Yilin", "-c", "user.email=yilin@example.local", "commit", "-m", "$Message ($timestamp)")
+Invoke-Git @("pull", "--rebase", "origin", "main")
 Invoke-Git @("push", "-u", "origin", "HEAD:main")
 
 Write-Output "Published changes to GitHub. GitHub Pages should update after the Pages workflow finishes."
