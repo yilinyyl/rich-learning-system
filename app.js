@@ -310,9 +310,27 @@ function cloudConfig() {
   return window.RICH_APP_CONFIG || {};
 }
 
+function cloudConfigError() {
+  const config = cloudConfig();
+  if (!config.supabaseUrl || !config.supabaseAnonKey) {
+    return "Supabase 还没设置。请填入 Project URL 和 anon public key。";
+  }
+
+  try {
+    const url = new URL(config.supabaseUrl);
+    if (!url.hostname.endsWith(".supabase.co") || url.pathname !== "/") {
+      return "Supabase URL 填错了。请只填 https://xxxx.supabase.co，不要包含 /rest/v1、/auth/v1、/project 或其他路径。";
+    }
+  } catch {
+    return "Supabase URL 格式不对。它应该长得像 https://xxxx.supabase.co";
+  }
+
+  return "";
+}
+
 function cloudIsConfigured() {
   const config = cloudConfig();
-  return Boolean(config.supabaseUrl && config.supabaseAnonKey && window.supabase);
+  return Boolean(!cloudConfigError() && window.supabase);
 }
 
 function setCloudStatus(message) {
@@ -515,8 +533,9 @@ function bindEvents() {
 }
 
 async function setupCloud() {
-  if (!cloudIsConfigured()) {
-    setCloudStatus("未连接云端：还没有设置 Supabase。现在只会存在本机。");
+  const configError = cloudConfigError();
+  if (configError || !window.supabase) {
+    setCloudStatus(`未连接云端：${configError || "Supabase 程式还没加载完成。"}`);
     const loginBtn = document.querySelector("#loginBtn");
     const emailInput = document.querySelector("#emailInput");
     if (loginBtn) loginBtn.disabled = true;
