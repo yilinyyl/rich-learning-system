@@ -36,7 +36,7 @@
           <textarea id="evidenceText" rows="3" placeholder="例：我是一个每天慢慢累积财富能力的人，所以我今天学会了一个小概念。"></textarea>
         </label>
 
-        <button id="nextActionBtn" type="button">今天不想做这个，换一个</button>
+        <button id="nextActionBtn" type="button">保存并换下一个</button>
       </section>
 
       <section class="quiet">
@@ -62,8 +62,22 @@
       </details>
 
       <details class="drawer" open>
-        <summary>可以写什么例子？</summary>
+        <summary>今天的“我是...”例子</summary>
+        <p>有网络时，这里会优先用网上资料生成新的例子。</p>
         <div id="examples" class="examples"></div>
+      </details>
+
+      <details class="drawer" open>
+        <summary>我的证据历史</summary>
+        <p>连接云端后，换手机也能看到以前写过的“我是...”证据。</p>
+        <div class="cloud-box">
+          <p id="cloudStatus" class="status-text">正在检查云端同步...</p>
+          <input id="emailInput" class="email-input" type="email" placeholder="输入 email，发送登录链接">
+          <button id="loginBtn" class="small-button" type="button">发送登录链接</button>
+          <button id="logoutBtn" class="small-button secondary-button" type="button" hidden>退出云端账号</button>
+        </div>
+        <div id="historyList" class="history-list"></div>
+        <button id="exportHistoryBtn" class="small-button" type="button">导出历史备份</button>
       </details>
 
       <details class="drawer" open>
@@ -87,6 +101,8 @@
       </details>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

@@ -1,6 +1,9 @@
 const STORE_KEY = "simple-rich-learning-v1";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
+let supabaseClient = null;
+let currentUser = null;
+let cloudSaveTimer = null;
 
 const actions = [
   {
@@ -204,7 +207,7 @@ function cleanTitle(title) {
 }
 
 function onlineExample(item) {
-  return `我是一个每天接触新机会的人，所以我今天看到「${item.title}」，并练习判断它帮谁解决什么问题。`;
+  return `我是一个每天接触新机会的人，所以我今天从 ${item.source} 看到「${item.title}」，并练习判断它背后有什么需求、技术或赚钱机会。`;
 }
 
 function linkedPoint(item) {
@@ -302,8 +305,59 @@ function saveState() {
   localStorage.setItem(STORE_KEY, JSON.stringify(state));
 }
 
+function cloudConfig() {
+  return window.RICH_APP_CONFIG || {};
+}
+
+function cloudIsConfigured() {
+  const config = cloudConfig();
+  return Boolean(config.supabaseUrl && config.supabaseAnonKey && window.supabase);
+}
+
+function setCloudStatus(message) {
+  const status = document.querySelector("#cloudStatus");
+  if (status) status.textContent = message;
+}
+
 function currentAction() {
   return actions[Number(state.actionIndex || 0) % actions.length];
+}
+
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function readableDate(dateKey) {
+  return new Date(`${dateKey}T00:00:00`).toLocaleDateString("zh-CN", {
+    month: "long",
+    day: "numeric",
+    weekday: "short"
+  });
+}
+
+function saveEvidenceHistory() {
+  const text = String(state.evidence || "").trim();
+  if (!text) return;
+
+  const history = Array.isArray(state.history) ? state.history : [];
+  const date = todayKey();
+  const existing = history.find((item) => item.date === date);
+
+  if (existing) {
+    existing.text = text;
+    existing.action = currentAction().title;
+    existing.updatedAt = new Date().toISOString();
+  } else {
+    history.unshift({
+      date,
+      text,
+      action: currentAction().title,
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  state.history = history.slice(0, 90);
+  queueCloudSave();
 }
 
 function render() {
@@ -320,9 +374,12 @@ function render() {
   const examples = document.querySelector("#examples");
   examples.innerHTML = "";
   const onlineExamples = (onlineInsights.length ? onlineInsights : state.onlineInsights || [])
-    .slice(0, 12)
+    .slice(0, 18)
     .map(onlineExample);
-  const dailyExamples = pickDailyItems([...action.examples, ...extraExamples, ...onlineExamples], 4, Number(state.actionIndex || 0));
+  const examplePool = onlineExamples.length
+    ? [...onlineExamples, ...action.examples, ...extraExamples]
+    : [...action.examples, ...extraExamples];
+  const dailyExamples = pickDailyItems(examplePool, 4, Number(state.actionIndex || 0));
   dailyExamples.forEach((example) => {
     const item = document.createElement("div");
     item.className = "example";
@@ -364,6 +421,30 @@ function render() {
     `;
     frameworkRoot.append(item);
   });
+
+  renderHistory();
+}
+
+function renderHistory() {
+  const historyRoot = document.querySelector("#historyList");
+  if (!historyRoot) return;
+  const history = Array.isArray(state.history) ? state.history : [];
+  historyRoot.innerHTML = "";
+
+  if (!history.length) {
+    const empty = document.createElement("div");
+    empty.className = "history-item";
+    empty.textContent = "还没有历史。今天写一句“我是...”，这里就会开始累积。";
+    historyRoot.append(empty);
+    return;
+  }
+
+  history.slice(0, 14).forEach((entry) => {
+    const item = document.createElement("div");
+    item.className = "history-item";
+    item.innerHTML = `<span>${readableDate(entry.date)} · ${entry.action || "行动证据"}</span>${entry.text}`;
+    historyRoot.append(item);
+  });
 }
 
 function bindEvents() {
@@ -374,10 +455,14 @@ function bindEvents() {
 
   document.querySelector("#evidenceText").addEventListener("input", (event) => {
     state.evidence = event.target.value;
+    saveEvidenceHistory();
     saveState();
+    renderHistory();
   });
 
   document.querySelector("#nextActionBtn").addEventListener("click", () => {
+    saveEvidenceHistory();
+    saveState();
     state.actionIndex = (Number(state.actionIndex || 0) + 1) % actions.length;
     state.done = false;
     state.evidence = "";
@@ -405,6 +490,147 @@ function bindEvents() {
       });
     });
   }
+
+  const exportHistoryBtn = document.querySelector("#exportHistoryBtn");
+  if (exportHistoryBtn) {
+    exportHistoryBtn.addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(state.history || [], null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `rich-learning-history-${todayKey()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  const loginBtn = document.querySelector("#loginBtn");
+  if (loginBtn) loginBtn.addEventListener("click", sendLoginLink);
+
+  const logoutBtn = document.querySelector("#logoutBtn");
+  if (logoutBtn) logoutBtn.addEventListener("click", logoutCloud);
+}
+
+async function setupCloud() {
+  if (!cloudIsConfigured()) {
+    setCloudStatus("未连接云端：还没有设置 Supabase。现在只会存在本机。");
+    return;
+  }
+
+  const config = cloudConfig();
+  supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
+  const { data } = await supabaseClient.auth.getSession();
+  currentUser = data.session?.user || null;
+
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
+    currentUser = session?.user || null;
+    updateCloudUi();
+    if (currentUser) loadCloudHistory();
+  });
+
+  updateCloudUi();
+  if (currentUser) await loadCloudHistory();
+}
+
+function updateCloudUi() {
+  const loginBtn = document.querySelector("#loginBtn");
+  const logoutBtn = document.querySelector("#logoutBtn");
+  const emailInput = document.querySelector("#emailInput");
+
+  if (!cloudIsConfigured()) return;
+
+  if (currentUser) {
+    setCloudStatus(`已连接云端：${currentUser.email}。换手机后用同一个 email 登录即可恢复历史。`);
+    if (loginBtn) loginBtn.hidden = true;
+    if (emailInput) emailInput.hidden = true;
+    if (logoutBtn) logoutBtn.hidden = false;
+  } else {
+    setCloudStatus("Supabase 已设置，但还没登录。输入 email 后，同一个 email 可在其他手机恢复历史。");
+    if (loginBtn) loginBtn.hidden = false;
+    if (emailInput) emailInput.hidden = false;
+    if (logoutBtn) logoutBtn.hidden = true;
+  }
+}
+
+async function sendLoginLink() {
+  if (!supabaseClient) return;
+  const email = String(document.querySelector("#emailInput")?.value || "").trim();
+
+  if (!email) {
+    setCloudStatus("先输入 email。");
+    return;
+  }
+
+  setCloudStatus("正在发送登录链接...");
+  const { error } = await supabaseClient.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: location.href.split("#")[0] }
+  });
+
+  setCloudStatus(error ? `发送失败：${error.message}` : "登录链接已发送。请打开 email 里的链接。");
+}
+
+async function logoutCloud() {
+  if (!supabaseClient) return;
+  await supabaseClient.auth.signOut();
+  currentUser = null;
+  updateCloudUi();
+}
+
+async function loadCloudHistory() {
+  if (!supabaseClient || !currentUser) return;
+
+  setCloudStatus("正在读取云端历史...");
+  const { data, error } = await supabaseClient
+    .from("evidence_entries")
+    .select("date,text,action,updated_at")
+    .order("date", { ascending: false })
+    .limit(90);
+
+  if (error) {
+    setCloudStatus(`读取云端失败：${error.message}`);
+    return;
+  }
+
+  state.history = (data || []).map((entry) => ({
+    date: entry.date,
+    text: entry.text,
+    action: entry.action,
+    updatedAt: entry.updated_at
+  }));
+
+  const today = state.history.find((entry) => entry.date === todayKey());
+  if (today && !String(state.evidence || "").trim()) {
+    state.evidence = today.text;
+  }
+
+  saveState();
+  render();
+  setCloudStatus(`已连接云端：${currentUser.email}。`);
+}
+
+function queueCloudSave() {
+  if (!supabaseClient || !currentUser) return;
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = setTimeout(syncTodayEvidence, 650);
+}
+
+async function syncTodayEvidence() {
+  const text = String(state.evidence || "").trim();
+  if (!supabaseClient || !currentUser || !text) return;
+
+  const { error } = await supabaseClient.from("evidence_entries").upsert(
+    {
+      user_id: currentUser.id,
+      date: todayKey(),
+      text,
+      action: currentAction().title,
+      updated_at: new Date().toISOString()
+    },
+    { onConflict: "user_id,date" }
+  );
+
+  setCloudStatus(error ? `云端保存失败：${error.message}` : `已保存到云端：${currentUser.email}。`);
 }
 
 function bindPwaInstall() {
@@ -423,6 +649,7 @@ function bindPwaInstall() {
 render();
 bindEvents();
 bindPwaInstall();
+setupCloud();
 onlineInsights = Array.isArray(state.onlineInsights) ? state.onlineInsights : [];
 fetchOnlineInsights().catch(() => {
   const status = document.querySelector("#onlineStatus");
