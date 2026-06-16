@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-16.4";
+const APP_VERSION = "2026-06-16.5";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -337,7 +337,7 @@ async function fetchOnlineInsights() {
 
 async function fetchRichLifeInsights() {
   const status = document.querySelector("#richLifeStatus");
-  if (status) status.textContent = "正在抓取财富生活相关资料...";
+  if (status) status.textContent = `正在抓取财富生活相关资料... ${new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`;
 
   const requests = [
     fetchJson(gdeltUrl('"family office" wealth management')),
@@ -347,6 +347,7 @@ async function fetchRichLifeInsights() {
   ];
 
   const results = await Promise.allSettled(requests);
+  const failedCount = results.filter((result) => result.status === "rejected").length;
   richLifeInsights = results
     .filter((result) => result.status === "fulfilled")
     .flatMap((result) => result.value.articles || [])
@@ -367,7 +368,7 @@ async function fetchRichLifeInsights() {
   if (status) {
     status.textContent = richLifeInsights.length
       ? `已更新 ${richLifeInsights.length} 条财富生活资料。`
-      : "这次没有抓到财富生活资料，先用备用句子。";
+      : `这次没有抓到财富生活资料，先用备用句子。失败来源：${failedCount}/${results.length}`;
   }
   render();
 }
@@ -518,12 +519,34 @@ function render() {
 
   const richLifeRoot = document.querySelector("#richLife");
   richLifeRoot.innerHTML = "";
-  richLifeLines().forEach((line) => {
+  const richLifeItems = activeRichLifeInsights();
+  if (richLifeItems.length) {
+    pickDailyItems(richLifeItems, 4, 2).forEach((item) => {
+      const block = document.createElement("div");
+      block.className = "example";
+      const link = document.createElement("a");
+      link.href = item.url;
+      link.target = "_blank";
+      link.rel = "noreferrer";
+      link.textContent = "打开来源";
+      const title = document.createElement("strong");
+      title.textContent = item.title;
+      block.append(title);
+      block.append(document.createElement("br"));
+      block.append(`我看到：${item.summary}`);
+      block.append(document.createElement("br"));
+      block.append(`${item.domain || item.source} · `);
+      block.append(link);
+      richLifeRoot.append(block);
+    });
+  } else {
+    richLifeLines().forEach((line) => {
     const item = document.createElement("div");
     item.className = "example";
     item.textContent = line;
     richLifeRoot.append(item);
-  });
+    });
+  }
 
   const keyPointRoot = document.querySelector("#keyPoints");
   keyPointRoot.innerHTML = "";
@@ -623,8 +646,9 @@ function bindEvents() {
   const refreshRichLifeBtn = document.querySelector("#refreshRichLifeBtn");
   if (refreshRichLifeBtn) {
     refreshRichLifeBtn.addEventListener("click", () => {
+      const status = document.querySelector("#richLifeStatus");
+      if (status) status.textContent = "已点击刷新，正在连接资料来源...";
       fetchRichLifeInsights().catch(() => {
-        const status = document.querySelector("#richLifeStatus");
         if (status) status.textContent = "财富生活资料暂时抓不到，先用备用句子。";
       });
     });
