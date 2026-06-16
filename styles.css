@@ -159,6 +159,24 @@ button:hover {
   color: var(--ink);
 }
 
+.password-row {
+  display: grid;
+  grid-template-columns: 1fr 72px;
+  gap: 8px;
+  align-items: end;
+}
+
+.password-row .email-input {
+  margin-top: 10px;
+}
+
+.inline-button {
+  width: auto;
+  margin-top: 10px;
+  padding: 12px 10px;
+  font-size: 14px;
+}
+
 .status-text {
   color: var(--muted);
   font-size: 13px;

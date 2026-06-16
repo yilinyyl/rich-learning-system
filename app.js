@@ -533,6 +533,17 @@ function bindEvents() {
 
   const logoutBtn = document.querySelector("#logoutBtn");
   if (logoutBtn) logoutBtn.addEventListener("click", logoutCloud);
+
+  const togglePasswordBtn = document.querySelector("#togglePasswordBtn");
+  if (togglePasswordBtn) {
+    togglePasswordBtn.addEventListener("click", () => {
+      const passwordInput = document.querySelector("#passwordInput");
+      if (!passwordInput) return;
+      const shouldShow = passwordInput.type === "password";
+      passwordInput.type = shouldShow ? "text" : "password";
+      togglePasswordBtn.textContent = shouldShow ? "隐藏" : "显示";
+    });
+  }
 }
 
 async function setupCloud() {

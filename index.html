@@ -74,7 +74,10 @@
         <div class="cloud-box">
           <p id="cloudStatus" class="status-text">正在检查云端同步...</p>
           <input id="emailInput" class="email-input" type="email" placeholder="Email">
-          <input id="passwordInput" class="email-input" type="password" placeholder="Password，至少 6 个字符">
+          <div class="password-row">
+            <input id="passwordInput" class="email-input" type="password" placeholder="Password，至少 6 个字符">
+            <button id="togglePasswordBtn" class="inline-button" type="button">显示</button>
+          </div>
           <button id="loginBtn" class="small-button" type="button">登录</button>
           <button id="signupBtn" class="small-button secondary-button" type="button">第一次使用：注册</button>
           <button id="logoutBtn" class="small-button secondary-button" type="button" hidden>退出云端账号</button>
