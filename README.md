@@ -42,3 +42,54 @@ Updated for GitHub Pages.
 
 - iPhone Safari：分享按钮，选择“加入主屏幕”。
 - Android Chrome：菜单，选择“安装应用”或“添加到主屏幕”。
+
+## 云端历史同步
+
+如果想换手机后还能看到历史，需要连接 Supabase。
+
+1. 去 https://supabase.com 新建一个 project。
+2. 在 `Authentication` -> `Providers` 里开启 Email。
+3. 如果你不想注册时确认邮件，可以在 Email provider 里关闭 confirm email；如果保持开启，注册后要去邮箱点确认。
+4. 在 `SQL Editor` 执行：
+
+```sql
+create table if not exists public.evidence_entries (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  date text not null,
+  text text not null,
+  action text,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, date)
+);
+
+alter table public.evidence_entries enable row level security;
+
+create policy "Users can read own evidence"
+on public.evidence_entries
+for select
+using (auth.uid() = user_id);
+
+create policy "Users can insert own evidence"
+on public.evidence_entries
+for insert
+with check (auth.uid() = user_id);
+
+create policy "Users can update own evidence"
+on public.evidence_entries
+for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+```
+
+5. 在 Supabase `Project Settings` -> `API` 复制 Project URL/API URL 和 anon public key。
+6. 打开 `config.js`，填入：
+
+```js
+window.RICH_APP_CONFIG = {
+  supabaseUrl: "https://你的projectref.supabase.co",
+  supabaseAnonKey: "你的 anon public key"
+};
+```
+
+7. 运行发布脚本上传到 GitHub Pages。
+8. 手机打开 app，用 email + password 注册或登录。

@@ -526,7 +526,10 @@ function bindEvents() {
   }
 
   const loginBtn = document.querySelector("#loginBtn");
-  if (loginBtn) loginBtn.addEventListener("click", sendLoginLink);
+  if (loginBtn) loginBtn.addEventListener("click", signInWithPassword);
+
+  const signupBtn = document.querySelector("#signupBtn");
+  if (signupBtn) signupBtn.addEventListener("click", signUpWithPassword);
 
   const logoutBtn = document.querySelector("#logoutBtn");
   if (logoutBtn) logoutBtn.addEventListener("click", logoutCloud);
@@ -537,9 +540,13 @@ async function setupCloud() {
   if (configError || !window.supabase) {
     setCloudStatus(`未连接云端：${configError || "Supabase 程式还没加载完成。"}`);
     const loginBtn = document.querySelector("#loginBtn");
+    const signupBtn = document.querySelector("#signupBtn");
     const emailInput = document.querySelector("#emailInput");
+    const passwordInput = document.querySelector("#passwordInput");
     if (loginBtn) loginBtn.disabled = true;
+    if (signupBtn) signupBtn.disabled = true;
     if (emailInput) emailInput.disabled = true;
+    if (passwordInput) passwordInput.disabled = true;
     return;
   }
 
@@ -560,45 +567,83 @@ async function setupCloud() {
 
 function updateCloudUi() {
   const loginBtn = document.querySelector("#loginBtn");
+  const signupBtn = document.querySelector("#signupBtn");
   const logoutBtn = document.querySelector("#logoutBtn");
   const emailInput = document.querySelector("#emailInput");
+  const passwordInput = document.querySelector("#passwordInput");
 
   if (!cloudIsConfigured()) return;
 
   if (currentUser) {
     setCloudStatus(`已连接云端：${currentUser.email}。换手机后用同一个 email 登录即可恢复历史。`);
     if (loginBtn) loginBtn.hidden = true;
+    if (signupBtn) signupBtn.hidden = true;
     if (emailInput) emailInput.hidden = true;
+    if (passwordInput) passwordInput.hidden = true;
     if (logoutBtn) logoutBtn.hidden = false;
   } else {
-    setCloudStatus("Supabase 已设置，但还没登录。输入 email 后，同一个 email 可在其他手机恢复历史。");
+    setCloudStatus("Supabase 已设置。用 email + password 登录后，换手机也能恢复历史。");
     if (loginBtn) loginBtn.hidden = false;
     if (loginBtn) loginBtn.disabled = false;
+    if (signupBtn) signupBtn.hidden = false;
+    if (signupBtn) signupBtn.disabled = false;
     if (emailInput) emailInput.hidden = false;
     if (emailInput) emailInput.disabled = false;
+    if (passwordInput) passwordInput.hidden = false;
+    if (passwordInput) passwordInput.disabled = false;
     if (logoutBtn) logoutBtn.hidden = true;
   }
 }
 
-async function sendLoginLink() {
-  if (!supabaseClient) {
-    setCloudStatus("不能发送登录链接：Supabase 还没设置好。请先确认 config.js 已填入 Project URL 和 anon public key，并已发布到 GitHub Pages。");
-    return;
-  }
+function authFields() {
   const email = String(document.querySelector("#emailInput")?.value || "").trim();
+  const password = String(document.querySelector("#passwordInput")?.value || "");
 
-  if (!email) {
-    setCloudStatus("先输入 email。");
+  if (!email) return { error: "先输入 email。" };
+  if (password.length < 6) return { error: "密码至少要 6 个字符。" };
+  return { email, password };
+}
+
+async function signInWithPassword() {
+  if (!supabaseClient) {
+    setCloudStatus("不能登录：Supabase 还没设置好。请先确认 config.js 已填入 Project URL 和 anon public key，并已发布到 GitHub Pages。");
     return;
   }
 
-  setCloudStatus("正在发送登录链接...");
-  const { error } = await supabaseClient.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: location.href.split("#")[0] }
+  const fields = authFields();
+  if (fields.error) {
+    setCloudStatus(fields.error);
+    return;
+  }
+
+  setCloudStatus("正在登录...");
+  const { error } = await supabaseClient.auth.signInWithPassword({
+    email: fields.email,
+    password: fields.password
   });
 
-  setCloudStatus(error ? `发送失败：${error.message}` : "登录链接已发送。请打开 email 里的链接。");
+  setCloudStatus(error ? `登录失败：${error.message}` : "登录成功，正在读取云端历史...");
+}
+
+async function signUpWithPassword() {
+  if (!supabaseClient) {
+    setCloudStatus("不能注册：Supabase 还没设置好。");
+    return;
+  }
+
+  const fields = authFields();
+  if (fields.error) {
+    setCloudStatus(fields.error);
+    return;
+  }
+
+  setCloudStatus("正在注册...");
+  const { error } = await supabaseClient.auth.signUp({
+    email: fields.email,
+    password: fields.password
+  });
+
+  setCloudStatus(error ? `注册失败：${error.message}` : "注册成功。若 Supabase 要求确认邮件，请先去邮箱点确认；否则会自动登录。");
 }
 
 async function logoutCloud() {
