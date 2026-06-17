@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-17.10";
+const APP_VERSION = "2026-06-17.11";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -267,10 +267,13 @@ function cleanBookHighlight(text, limit = 96) {
     result = result
       .replace(/\s*(?:位置|页码|页|loc(?:ation)?|page|p)\.?\s*[:：]?\s*[0-9０-９,\-–—]+\s*$/i, "")
       .replace(/\s*[（(【\[]\s*(?:位置|页码|页|loc(?:ation)?|page|p)?\.?\s*[:：]?\s*[0-9０-９,\-–—]+\s*[)）】\]]\s*$/i, "")
+      .replace(/\s*[（(【\[]\s*[0-9０-９]+(?:\s*[-–—]\s*[0-9０-９]+)?\s*[)）】\]]\s*$/u, "")
       .replace(/\s*[|｜·•#^]\s*[0-9０-９a-z-]{1,16}\s*$/i, "")
       .replace(/([。.!！？?，,；;：:])\s*[0-9０-９]{1,6}%?\s*$/u, "$1")
       .replace(/\s+[0-9０-９]{1,6}%?\s*$/u, "")
       .replace(/\s*[¹²³⁴⁵⁶⁷⁸⁹⁰①②③④⑤⑥⑦⑧⑨⑩]+\s*$/u, "")
+      .replace(/\s*[〖〗《》「」『』]\s*[0-9０-９]+\s*$/u, "")
+      .replace(/\s*[,:：;；]\s*[0-9０-９]+\s*$/u, "")
       .trim();
   }
 
@@ -722,58 +725,6 @@ function parseWereadMarkdown(text, fileName) {
     .slice(0, 40);
 }
 
-function bookThemeFromText(text) {
-  const lower = String(text || "").toLowerCase();
-  if (/钱|财富|资产|收入|现金流|投资|消费|储蓄|money|wealth|income|asset|cash/.test(lower)) return "wealth";
-  if (/行动|执行|练习|实践|开始|完成|habit|action|practice|execute/.test(lower)) return "action";
-  if (/注意力|专注|清醒|觉察|认知|思考|focus|attention|awareness|think/.test(lower)) return "focus";
-  if (/身体|健康|运动|睡眠|冥想|瑜伽|呼吸|health|sleep|body|meditation/.test(lower)) return "body";
-  if (/学习|知识|阅读|能力|技能|learn|skill|knowledge|read/.test(lower)) return "learning";
-  return "growth";
-}
-
-function bookIdentitySentence(item, index) {
-  const theme = bookThemeFromText(item.text);
-  const templates = {
-    wealth: [
-      "我是一个会让钱变清楚的人。今天我只记录一笔钱。",
-      "我是一个把自由放在前面的人。今天我先看清楚一笔钱去了哪里。",
-      "我是一个慢慢建立资产感的人。今天我不冲动消费，先停 10 分钟。"
-    ],
-    action: [
-      "我是一个会把书用起来的人。今天我只选一个 5 分钟动作。",
-      "我是一个不只看书的人。我读完重点后，马上做一小步。",
-      "我是一个能开始的人。今天不求完整，只求真的开始。"
-    ],
-    focus: [
-      "我是一个会保护注意力的人。今天我先做最重要的一件小事。",
-      "我是一个越来越清醒的人。今天我少刷一点，多留一点时间给自己。",
-      "我是一个能看见自己状态的人。今天我先停下来，再做决定。"
-    ],
-    body: [
-      "我是一个会照顾身体的人。今天我先走路、伸展或安静呼吸 5 分钟。",
-      "我是一个把身体放在第一位的人。今天我不透支自己。",
-      "我是一个健康也自由的人。今天我先做一个让身体舒服一点的选择。"
-    ],
-    learning: [
-      "我是一个会学习的人。今天我只把一个重点讲给自己听。",
-      "我是一个慢慢累积能力的人。今天读懂一句就够。",
-      "我是一个能把知识变简单的人。今天我用自己的话解释一个概念。"
-    ],
-    growth: [
-      "我是一个每天变清楚一点的人。今天我只吸收一个重点。",
-      "我是一个会从书里拿走有用东西的人。今天我只保留一句对我有帮助的话。",
-      "我是一个慢慢升级自己的人。今天我先做一件小而确定的事。"
-    ]
-  };
-  const options = templates[theme] || templates.growth;
-  return options[(dailyOffset() + index + Number(state.bookSpin || 0)) % options.length];
-}
-
-function bookIdentityExamples() {
-  return pickDailyItems(activeWereadHighlights(), 3, Number(state.bookSpin || 0)).map(bookIdentitySentence);
-}
-
 function renderBookHighlights() {
   const root = document.querySelector("#bookHighlights");
   if (!root) return;
@@ -887,27 +838,24 @@ function render() {
   document.querySelector("#doneCheck").checked = Boolean(state.done);
   document.querySelector("#evidenceText").value = state.evidence || "";
   const examples = document.querySelector("#examples");
-  examples.innerHTML = "";
-  const bookExamples = bookIdentityExamples();
-  const onlineIdentityExamples = insightIdentityExamples();
-  const examplePool = bookExamples.length
-    ? [...bookExamples, ...onlineIdentityExamples]
-    : onlineIdentityExamples.length
-      ? onlineIdentityExamples
-      : [...action.examples, ...extraExamples];
-  const dailyExamples = pickDailyItems(examplePool, 4, Number(state.actionIndex || 0));
-  dailyExamples.forEach((example) => {
-    const item = document.createElement("div");
-    item.className = "example";
-    item.textContent = example;
-    examples.append(item);
-  });
+  if (examples) {
+    examples.innerHTML = "";
+    const onlineIdentityExamples = insightIdentityExamples();
+    const examplePool = onlineIdentityExamples.length ? onlineIdentityExamples : [...action.examples, ...extraExamples];
+    const dailyExamples = pickDailyItems(examplePool, 4, Number(state.actionIndex || 0));
+    dailyExamples.forEach((example) => {
+      const item = document.createElement("div");
+      item.className = "example";
+      item.textContent = example;
+      examples.append(item);
+    });
+  }
 
   const wereadStatus = document.querySelector("#wereadStatus");
   if (wereadStatus) {
     const count = activeWereadHighlights().length;
     wereadStatus.textContent = count
-      ? `已导入 ${count} 条读书重点。上面直接看重点，下面看“我是...”句子。`
+      ? `已导入 ${count} 条读书重点。`
       : "还没有导入读书重点。";
   }
   renderBookHighlights();
