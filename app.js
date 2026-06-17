@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-17.5";
+const APP_VERSION = "2026-06-17.6";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -690,14 +690,67 @@ function parseWereadMarkdown(text, fileName) {
     .slice(0, 40);
 }
 
+function bookThemeFromText(text) {
+  const lower = String(text || "").toLowerCase();
+  if (/钱|财富|资产|收入|现金流|投资|消费|储蓄|money|wealth|income|asset|cash/.test(lower)) return "wealth";
+  if (/行动|执行|练习|实践|开始|完成|habit|action|practice|execute/.test(lower)) return "action";
+  if (/注意力|专注|清醒|觉察|认知|思考|focus|attention|awareness|think/.test(lower)) return "focus";
+  if (/身体|健康|运动|睡眠|冥想|瑜伽|呼吸|health|sleep|body|meditation/.test(lower)) return "body";
+  if (/学习|知识|阅读|能力|技能|learn|skill|knowledge|read/.test(lower)) return "learning";
+  return "growth";
+}
+
+function bookIdentitySentence(item, index) {
+  const theme = bookThemeFromText(item.text);
+  const shortPoint = cleanBookHighlight(item.text, 52);
+  const templates = {
+    wealth: [
+      `我是一个开始看懂钱的人，所以我今天记住：《${item.book}》${shortPoint}`,
+      `我是一个会让钱变清楚的人，所以我今天从《${item.book}》拿走一个重点：${shortPoint}`
+    ],
+    action: [
+      `我是一个会行动的人，所以我今天只做一件小事：把《${item.book}》这个重点用起来。`,
+      `我是一个不只看书的人，所以我今天把《${item.book}》的一句话变成一个小动作。`
+    ],
+    focus: [
+      `我是一个越来越清醒的人，所以我今天用《${item.book}》提醒自己：${shortPoint}`,
+      `我是一个会保护注意力的人，所以我今天少想一点，多做一点。`
+    ],
+    body: [
+      `我是一个会照顾身体的人，所以我今天根据《${item.book}》先做一个很小的健康动作。`,
+      `我是一个把身体放在第一位的人，所以我今天先让自己休息、呼吸或动一动。`
+    ],
+    learning: [
+      `我是一个会学习的人，所以我今天从《${item.book}》只拿走一个重点：${shortPoint}`,
+      `我是一个会慢慢累积能力的人，所以我今天读懂一句就够。`
+    ],
+    growth: [
+      `我是一个会从书里提炼重点的人，所以我今天记住：《${item.book}》${shortPoint}`,
+      `我是一个每天变清楚一点的人，所以我今天只吸收《${item.book}》的一个重点。`
+    ]
+  };
+  const options = templates[theme] || templates.growth;
+  return options[(dailyOffset() + index + Number(state.bookSpin || 0)) % options.length];
+}
+
 function bookIdentityExamples() {
-  return pickDailyItems(activeWereadHighlights(), 3, Number(state.bookSpin || 0)).map((item, index) => {
-    const templates = [
-      `我是一个会把书变成行动的人，所以我今天只实践一句：《${item.book}》${item.text}`,
-      `我是一个会从书里提炼重点的人，所以我今天记住：《${item.book}》${item.text}`,
-      `我是一个慢慢变清醒的人，所以我今天用这句话提醒自己：《${item.book}》${item.text}`
-    ];
-    return templates[(dailyOffset() + index) % templates.length];
+  return pickDailyItems(activeWereadHighlights(), 3, Number(state.bookSpin || 0)).map(bookIdentitySentence);
+}
+
+function renderBookHighlights() {
+  const root = document.querySelector("#bookHighlights");
+  if (!root) return;
+  root.innerHTML = "";
+  const highlights = pickDailyItems(activeWereadHighlights(), 4, Number(state.bookSpin || 0));
+  highlights.forEach((highlight) => {
+    const item = document.createElement("div");
+    item.className = "example";
+    const title = document.createElement("strong");
+    title.textContent = `《${highlight.book}》`;
+    item.append(title);
+    item.append(document.createElement("br"));
+    item.append(highlight.text);
+    root.append(item);
   });
 }
 
@@ -786,9 +839,10 @@ function render() {
   if (wereadStatus) {
     const count = activeWereadHighlights().length;
     wereadStatus.textContent = count
-      ? `已导入 ${count} 条读书重点，会用于生成“我是...”例子。`
+      ? `已导入 ${count} 条读书重点。上面直接看重点，下面看“我是...”句子。`
       : "还没有导入读书重点。";
   }
+  renderBookHighlights();
 
   const richLifeRoot = document.querySelector("#richLife");
   richLifeRoot.innerHTML = "";
