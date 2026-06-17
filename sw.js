@@ -1,4 +1,4 @@
-const CACHE_NAME = "rich-learning-v2026-06-17-3";
+const CACHE_NAME = "rich-learning-v2026-06-17-4";
 const ASSETS = [
   "./",
   "./index.html",

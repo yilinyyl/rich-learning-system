@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-17.3";
+const APP_VERSION = "2026-06-17.4";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -388,8 +388,21 @@ function richLifeInsightFromWiki(page, search) {
   };
 }
 
+async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function fetchJson(url) {
-  const response = await fetch(url, { cache: "no-store" });
+  const response = await fetchWithTimeout(url, { cache: "no-store" });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return response.json();
 }
@@ -483,7 +496,7 @@ function horizonItemsFromEntry(entry) {
 }
 
 async function fetchHorizonInsights() {
-  const response = await fetch("https://thysrael.github.io/Horizon/feed-en.xml", { cache: "no-store" });
+  const response = await fetchWithTimeout("https://thysrael.github.io/Horizon/feed-en.xml", { cache: "no-store" }, 8000);
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const xml = await response.text();
   const feed = new DOMParser().parseFromString(xml, "application/xml");
@@ -641,12 +654,13 @@ function onlineKeyPoints() {
   const items = activeOnlineInsights();
   const pinned = items.filter((item) => item.pinned);
   const regular = items.filter((item) => !item.pinned);
+  const offset = Number(state.onlineSpin || 0) + Number(state.actionIndex || 0);
   if (pinned.length) {
-    const horizonItems = pickDailyItems(pinned, 3, Number(state.actionIndex || 0));
+    const horizonItems = pickDailyItems(pinned, 3, offset);
     if (horizonItems.length >= 3) return horizonItems;
-    return [...horizonItems, ...pickDailyItems(regular, 3 - horizonItems.length, Number(state.actionIndex || 0))].filter(Boolean);
+    return [...horizonItems, ...pickDailyItems(regular, 3 - horizonItems.length, offset)].filter(Boolean);
   }
-  return pickDailyItems(items, 3);
+  return pickDailyItems(items, 3, offset);
 }
 
 function activeRichLifeInsights() {
@@ -809,9 +823,14 @@ function bindEvents() {
   const refreshOnlineBtn = document.querySelector("#refreshOnlineBtn");
   if (refreshOnlineBtn) {
     refreshOnlineBtn.addEventListener("click", () => {
+      const status = document.querySelector("#onlineStatus");
+      state.onlineSpin = Number(state.onlineSpin || 0) + 1;
+      saveState();
+      render();
+      if (status) status.textContent = "已点击刷新，正在读取 Horizon 英文日报...";
       fetchOnlineInsights().catch(() => {
-        const status = document.querySelector("#onlineStatus");
-        if (status) status.textContent = "网上资料暂时抓不到，先用备用 key points。";
+        if (status) status.textContent = "Horizon 暂时抓不到，已经先换成本地备用 key points。";
+        render();
       });
     });
   }
