@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-17.1";
+const APP_VERSION = "2026-06-17.2";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -241,6 +241,14 @@ function cleanTitle(title) {
     .slice(0, 120);
 }
 
+function cleanSummary(text, limit = 160) {
+  return String(text || "")
+    .replace(/\s+/g, " ")
+    .replace(/[<>]/g, "")
+    .trim()
+    .slice(0, limit);
+}
+
 function linkedPoint(item) {
   const point = document.createElement("div");
   point.className = "example";
@@ -389,42 +397,101 @@ async function fetchJson(url) {
 function horizonFallbackInsights() {
   return [
     {
-      source: "GitHub · Thysrael/Horizon",
-      title: "Horizon：AI 新闻雷达",
-      summary: "把 Hacker News、RSS、Reddit、Telegram、GitHub 等来源收集起来，再用 AI 去重、评分、过滤和摘要，最后生成每日简报。",
+      source: "Horizon Daily",
+      title: "Horizon 暂时抓不到，先读它的公开日报入口",
+      summary: "Horizon 会从多个信息源抓取内容，再用 AI 去重、评分、过滤和摘要。等 feed 可用时，这里会显示最新日报条目。",
+      url: "https://thysrael.github.io/Horizon/",
+      pinned: true
+    },
+    {
+      source: "Horizon Daily",
+      title: "AI 信息系统的基本流程",
+      summary: "收集资料、去掉重复、判断重要性、补充背景、写成摘要。这就是你要学习的后端信息处理思路。",
       url: "https://github.com/Thysrael/Horizon",
       pinned: true
     },
     {
-      source: "GitHub · Thysrael/Horizon",
-      title: "Horizon 给你的学习重点",
-      summary: "先不要急着安装。你今天只学一个概念：AI 信息系统 = 收集资料、去掉重复、判断重要性、写成你看得懂的摘要。",
-      url: "https://github.com/Thysrael/Horizon",
-      pinned: true
-    },
-    {
-      source: "GitHub · Thysrael/Horizon",
-      title: "Horizon 可以怎样帮你变富有",
-      summary: "它示范了一个后端型机会：不做漂亮前端，也可以做一个每天替人整理重要信息的系统。",
+      source: "Horizon Daily",
+      title: "为什么这和变富有有关",
+      summary: "有价值的信息系统可以帮人省时间、看重点、少错过机会。你不喜欢前端，也可以学习这种后端型价值。",
       url: "https://github.com/Thysrael/Horizon",
       pinned: true
     }
   ];
 }
 
-function horizonInsightFromRepo(repo) {
-  return {
-    source: "GitHub · Thysrael/Horizon",
-    title: cleanTitle(repo.full_name || "Thysrael/Horizon"),
-    summary: cleanTitle(repo.description || "Your own AI-powered news radar. Generates daily briefings in English & Chinese."),
-    url: repo.html_url || "https://github.com/Thysrael/Horizon",
-    pinned: true
-  };
+function absoluteHorizonUrl(url) {
+  if (!url) return "https://thysrael.github.io/Horizon/";
+  try {
+    return new URL(url, "https://thysrael.github.io/Horizon/").href;
+  } catch {
+    return "https://thysrael.github.io/Horizon/";
+  }
+}
+
+function firstUsefulParagraphAfter(node) {
+  let current = node.nextElementSibling;
+  while (current) {
+    if (current.tagName === "P") {
+      const text = cleanSummary(current.textContent, 220);
+      if (text && !/hackernews|reddit|telegram|github\s*·|社区讨论/i.test(text)) return text;
+    }
+    if (current.tagName === "H2") break;
+    current = current.nextElementSibling;
+  }
+  return "";
+}
+
+function horizonItemsFromEntry(entry) {
+  const content = entry.getElementsByTagName("content")[0]?.textContent || "";
+  const entryLink = entry.getElementsByTagName("link")[0]?.getAttribute("href") || "https://thysrael.github.io/Horizon/";
+  const doc = new DOMParser().parseFromString(content, "text/html");
+  const headings = Array.from(doc.querySelectorAll("h2")).slice(0, 12);
+  const items = headings
+    .map((heading) => {
+      const anchor = heading.querySelector("a[href]");
+      const title = cleanTitle(anchor?.textContent || heading.textContent || "");
+      if (!title) return null;
+      const summary = firstUsefulParagraphAfter(heading) || "Horizon 从今日资讯中筛选出的高优先级条目。打开来源看完整摘要和背景。";
+      return {
+        source: "Horizon Daily",
+        title,
+        summary,
+        url: absoluteHorizonUrl(anchor?.getAttribute("href") || entryLink),
+        pinned: true
+      };
+    })
+    .filter(Boolean);
+
+  if (items.length) return items;
+
+  return Array.from(doc.querySelectorAll("ol li"))
+    .slice(0, 6)
+    .map((item) => {
+      const anchor = item.querySelector("a[href]");
+      const title = cleanTitle(anchor?.textContent || item.textContent || "");
+      if (!title) return null;
+      return {
+        source: "Horizon Daily",
+        title,
+        summary: "Horizon 今日筛选出的重要资讯。打开来源看完整摘要。",
+        url: absoluteHorizonUrl(entryLink),
+        pinned: true
+      };
+    })
+    .filter(Boolean);
 }
 
 async function fetchHorizonInsights() {
-  const repo = await fetchJson("https://api.github.com/repos/Thysrael/Horizon");
-  return [horizonInsightFromRepo(repo), ...horizonFallbackInsights().slice(1)];
+  const response = await fetch("https://thysrael.github.io/Horizon/feed-zh.xml", { cache: "no-store" });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const xml = await response.text();
+  const feed = new DOMParser().parseFromString(xml, "application/xml");
+  const entry = feed.getElementsByTagName("entry")[0];
+  if (!entry) throw new Error("Horizon feed has no entries");
+  const items = horizonItemsFromEntry(entry);
+  if (!items.length) throw new Error("Horizon feed has no parsed items");
+  return items.slice(0, 12);
 }
 
 async function fetchOnlineInsights() {
@@ -465,7 +532,7 @@ async function fetchOnlineInsights() {
 
   if (status) {
     status.textContent = onlineInsights.length
-      ? `已更新 ${onlineInsights.length} 条网上资料。每天打开会尽量刷新；如果失败会用备用重点。`
+      ? `已更新 ${onlineInsights.length} 条网上资料，优先显示 Horizon 日报筛选结果。`
       : "这次没有抓到网上资料，先显示备用重点。";
   }
   render();
@@ -575,10 +642,9 @@ function onlineKeyPoints() {
   const pinned = items.filter((item) => item.pinned);
   const regular = items.filter((item) => !item.pinned);
   if (pinned.length) {
-    return [
-      ...pickDailyItems(pinned, 1, Number(state.actionIndex || 0)),
-      ...pickDailyItems(regular, 2, Number(state.actionIndex || 0))
-    ].filter(Boolean);
+    const horizonItems = pickDailyItems(pinned, 3, Number(state.actionIndex || 0));
+    if (horizonItems.length >= 3) return horizonItems;
+    return [...horizonItems, ...pickDailyItems(regular, 3 - horizonItems.length, Number(state.actionIndex || 0))].filter(Boolean);
   }
   return pickDailyItems(items, 3);
 }
