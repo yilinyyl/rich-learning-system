@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-17.7";
+const APP_VERSION = "2026-06-17.8";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -250,7 +250,7 @@ function cleanSummary(text, limit = 160) {
 }
 
 function cleanBookHighlight(text, limit = 96) {
-  return String(text || "")
+  let result = String(text || "")
     .replace(/^[-*+]\s+/, "")
     .replace(/^>\s?/, "")
     .replace(/^#+\s*/, "")
@@ -258,14 +258,32 @@ function cleanBookHighlight(text, limit = 96) {
     .replace(/\*\*/g, "")
     .replace(/\[\[|\]\]/g, "")
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/^\s*(第[一二三四五六七八九十百千万\d]+[章节章篇部].*|chapter\s+\d+.*|chap\.\s*\d+.*)$/i, "")
-    .replace(/\s*(?:第\s*\d+\s*页|页码\s*\d+|位置\s*\d+|loc\.?\s*\d+|page\s*\d+|p\.?\s*\d+)\s*$/i, "")
-    .replace(/\s*[（(]\s*(?:第\s*)?\d+\s*(?:页|章|节|%|\/\d+)?\s*[)）]\s*$/g, "")
-    .replace(/\s*(?:#|\^)?\d{1,6}\s*$/g, "")
-    .replace(/[·•]\s*\d{1,6}\s*$/g, "")
     .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, limit);
+    .trim();
+
+  if (isChapterHeadingText(result)) return "";
+
+  for (let i = 0; i < 4; i += 1) {
+    result = result
+      .replace(/\s*(?:位置|页码|页|loc(?:ation)?|page|p)\.?\s*[:：]?\s*[0-9０-９,\-–—]+\s*$/i, "")
+      .replace(/\s*[（(【\[]\s*(?:位置|页码|页|loc(?:ation)?|page|p)?\.?\s*[:：]?\s*[0-9０-９,\-–—]+\s*[)）】\]]\s*$/i, "")
+      .replace(/\s*[|｜·•#^]\s*[0-9０-９a-z-]{1,16}\s*$/i, "")
+      .replace(/([。.!！？?，,；;：:])\s*[0-9０-９]{1,6}%?\s*$/u, "$1")
+      .replace(/\s+[0-9０-９]{1,6}%?\s*$/u, "")
+      .replace(/\s*[¹²³⁴⁵⁶⁷⁸⁹⁰①②③④⑤⑥⑦⑧⑨⑩]+\s*$/u, "")
+      .trim();
+  }
+
+  return result.slice(0, limit);
+}
+
+function isChapterHeadingText(text) {
+  const value = String(text || "").trim();
+  const compact = value.replace(/\s+/g, "");
+  return (
+    /^(?:\d+[.、．]\s*)?第[零〇一二两三四五六七八九十百千万0-9０-９]+[章节章篇部回]/.test(compact) ||
+    /^(chapter|chap\.?|section|part|volume)\s*[0-9ivxlcdm]+/i.test(value)
+  );
 }
 
 function linkedPoint(item) {
@@ -670,13 +688,19 @@ function activeOnlineInsights() {
 }
 
 function activeWereadHighlights() {
-  return Array.isArray(state.wereadHighlights) ? state.wereadHighlights : [];
+  return (Array.isArray(state.wereadHighlights) ? state.wereadHighlights : [])
+    .map((item) => ({
+      ...item,
+      book: cleanTitle(item.book || "读书重点"),
+      text: cleanBookHighlight(item.text || "", 120)
+    }))
+    .filter((item) => item.text.length >= 14 && !isChapterHeadingText(item.text));
 }
 
 function isUsefulHighlightLine(line) {
   const text = cleanBookHighlight(line, 140);
   if (text.length < 14) return false;
-  if (/^(第[一二三四五六七八九十百千万\d]+[章节章篇部]|chapter\s+\d+|chap\.\s*\d+)/i.test(text)) return false;
+  if (isChapterHeadingText(text)) return false;
   if (/^(part|section|volume)\s+\d+/i.test(text)) return false;
   if (/^(created|updated|author|isbn|cover|tags|source|url|date|metadata|书名|作者)[:：]/i.test(text)) return false;
   if (/^https?:\/\//i.test(text)) return false;
@@ -1011,6 +1035,20 @@ function bindEvents() {
       if (!files.length) return;
       await importWereadFiles(files, status);
       event.target.value = "";
+    });
+  }
+
+  const refreshBookBtn = document.querySelector("#refreshBookBtn");
+  if (refreshBookBtn) {
+    refreshBookBtn.addEventListener("click", () => {
+      const status = document.querySelector("#wereadStatus");
+      state.bookSpin = Number(state.bookSpin || 0) + 1;
+      saveState();
+      render();
+      if (status) {
+        const count = activeWereadHighlights().length;
+        status.textContent = count ? "已刷新读书重点和“我是...”句子。" : "还没有导入读书重点。";
+      }
     });
   }
 
