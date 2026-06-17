@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-17.2";
+const APP_VERSION = "2026-06-17.3";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -483,7 +483,7 @@ function horizonItemsFromEntry(entry) {
 }
 
 async function fetchHorizonInsights() {
-  const response = await fetch("https://thysrael.github.io/Horizon/feed-zh.xml", { cache: "no-store" });
+  const response = await fetch("https://thysrael.github.io/Horizon/feed-en.xml", { cache: "no-store" });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const xml = await response.text();
   const feed = new DOMParser().parseFromString(xml, "application/xml");
