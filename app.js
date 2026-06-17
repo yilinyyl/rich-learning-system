@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-17.8";
+const APP_VERSION = "2026-06-17.9";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -1019,17 +1019,6 @@ function bindEvents() {
   const wereadImport = document.querySelector("#wereadImport");
   if (wereadImport) {
     wereadImport.addEventListener("change", async (event) => {
-      const status = document.querySelector("#wereadStatus");
-      const files = Array.from(event.target.files || []);
-      if (!files.length) return;
-      await importWereadFiles(files, status);
-      event.target.value = "";
-    });
-  }
-
-  const wereadFolderImport = document.querySelector("#wereadFolderImport");
-  if (wereadFolderImport) {
-    wereadFolderImport.addEventListener("change", async (event) => {
       const status = document.querySelector("#wereadStatus");
       const files = Array.from(event.target.files || []);
       if (!files.length) return;
