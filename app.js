@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-16.7";
+const APP_VERSION = "2026-06-17.1";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -386,11 +386,53 @@ async function fetchJson(url) {
   return response.json();
 }
 
+function horizonFallbackInsights() {
+  return [
+    {
+      source: "GitHub · Thysrael/Horizon",
+      title: "Horizon：AI 新闻雷达",
+      summary: "把 Hacker News、RSS、Reddit、Telegram、GitHub 等来源收集起来，再用 AI 去重、评分、过滤和摘要，最后生成每日简报。",
+      url: "https://github.com/Thysrael/Horizon",
+      pinned: true
+    },
+    {
+      source: "GitHub · Thysrael/Horizon",
+      title: "Horizon 给你的学习重点",
+      summary: "先不要急着安装。你今天只学一个概念：AI 信息系统 = 收集资料、去掉重复、判断重要性、写成你看得懂的摘要。",
+      url: "https://github.com/Thysrael/Horizon",
+      pinned: true
+    },
+    {
+      source: "GitHub · Thysrael/Horizon",
+      title: "Horizon 可以怎样帮你变富有",
+      summary: "它示范了一个后端型机会：不做漂亮前端，也可以做一个每天替人整理重要信息的系统。",
+      url: "https://github.com/Thysrael/Horizon",
+      pinned: true
+    }
+  ];
+}
+
+function horizonInsightFromRepo(repo) {
+  return {
+    source: "GitHub · Thysrael/Horizon",
+    title: cleanTitle(repo.full_name || "Thysrael/Horizon"),
+    summary: cleanTitle(repo.description || "Your own AI-powered news radar. Generates daily briefings in English & Chinese."),
+    url: repo.html_url || "https://github.com/Thysrael/Horizon",
+    pinned: true
+  };
+}
+
+async function fetchHorizonInsights() {
+  const repo = await fetchJson("https://api.github.com/repos/Thysrael/Horizon");
+  return [horizonInsightFromRepo(repo), ...horizonFallbackInsights().slice(1)];
+}
+
 async function fetchOnlineInsights() {
   const status = document.querySelector("#onlineStatus");
-  if (status) status.textContent = "正在抓取 GitHub 和技术文章...";
+  if (status) status.textContent = "正在抓取 Horizon、GitHub 和技术文章...";
 
   const requests = [
+    fetchHorizonInsights().catch(() => horizonFallbackInsights()),
     fetchJson("https://dev.to/api/articles?tag=ai&per_page=12")
       .then((data) =>
         (data || []).map((article) => ({
@@ -415,10 +457,10 @@ async function fetchOnlineInsights() {
   onlineInsights = results
     .filter((result) => result.status === "fulfilled")
     .flatMap((result) => result.value)
-    .filter((item) => item.title && item.url && item.summary);
+    .filter((item, index, list) => item.title && item.url && item.summary && list.findIndex((other) => other.url === item.url && other.title === item.title) === index);
 
   state.onlineFetchedAt = new Date().toISOString();
-  state.onlineInsights = onlineInsights.slice(0, 30);
+  state.onlineInsights = onlineInsights.slice(0, 36);
   saveState();
 
   if (status) {
@@ -528,6 +570,19 @@ function activeOnlineInsights() {
   return onlineInsights.length ? onlineInsights : Array.isArray(state.onlineInsights) ? state.onlineInsights : [];
 }
 
+function onlineKeyPoints() {
+  const items = activeOnlineInsights();
+  const pinned = items.filter((item) => item.pinned);
+  const regular = items.filter((item) => !item.pinned);
+  if (pinned.length) {
+    return [
+      ...pickDailyItems(pinned, 1, Number(state.actionIndex || 0)),
+      ...pickDailyItems(regular, 2, Number(state.actionIndex || 0))
+    ].filter(Boolean);
+  }
+  return pickDailyItems(items, 3);
+}
+
 function activeRichLifeInsights() {
   const items = richLifeInsights.length ? richLifeInsights : Array.isArray(state.richLifeInsights) ? state.richLifeInsights : [];
   return items.filter((item) => !/gdelt|github|dev article/i.test(String(item.source || "")));
@@ -602,9 +657,9 @@ function render() {
 
   const keyPointRoot = document.querySelector("#keyPoints");
   keyPointRoot.innerHTML = "";
-  const liveItems = activeOnlineInsights();
+  const liveItems = onlineKeyPoints();
   if (liveItems.length) {
-    pickDailyItems(liveItems, 3).forEach((point) => keyPointRoot.append(linkedPoint(point)));
+    liveItems.forEach((point) => keyPointRoot.append(linkedPoint(point)));
   } else {
     pickDailyItems(fallbackKeyPoints, 3).forEach((point) => keyPointRoot.append(fallbackPoint(point)));
   }
