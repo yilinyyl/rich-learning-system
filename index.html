@@ -15,104 +15,121 @@
     <main class="app">
       <header class="header">
         <p id="todayLabel">今天</p>
-        <h1>今天只做一件小事</h1>
+        <h1>富有学习系统</h1>
+        <p class="header-note">每天只需要一个小行动，一个身份小证据，一个更清楚的未来画面。</p>
       </header>
 
-      <section class="card">
-        <p class="label">第一步</p>
-        <h2 id="actionTitle">学一个词 5 分钟</h2>
-        <p id="actionDetail" class="detail">只学一个你不懂的词，然后用自己的话写一句解释。</p>
-
-        <label class="done-row">
-          <input id="doneCheck" type="checkbox">
-          <span>我做了 5 分钟</span>
-        </label>
-        <p class="why-check">
-          这个勾不是为了证明你很努力。它只记录一件事：今天你有继续，没有断掉。
-        </p>
-
-        <label class="evidence">
-          <span>第二步：用“我是...”写一句证据</span>
-          <textarea id="evidenceText" rows="3" placeholder="例：我是一个每天慢慢累积财富能力的人，所以我今天学会了一个小概念。"></textarea>
-        </label>
-
-        <button id="nextActionBtn" type="button">保存并换下一个</button>
-      </section>
-
-      <section class="quiet">
-        <p>不需要一下子变厉害。</p>
-        <p>每天一个小证据，慢慢就会变有钱。</p>
-        <p id="appVersion" class="status-text">正在读取版本...</p>
-      </section>
-
-      <details class="drawer" open>
-        <summary>它怎么帮你变富有？</summary>
-        <p>它不是直接让钱出现。它帮你每天积累 4 种以后能变成钱的东西：注意力、知识、机会感、行动证据。</p>
-        <ul>
-          <li>注意力：你开始能控制自己，不被焦虑和拖延带走。</li>
-          <li>知识：你慢慢听得懂 AI、商业、钱、产品这些词。</li>
-          <li>机会感：你开始看见别人为什么愿意付钱。</li>
-          <li>行动证据：你不只是想变富有，你每天真的做了一点。</li>
-        </ul>
-      </details>
-
-      <details class="drawer" open>
-        <summary>有钱人的世界是什么样？</summary>
-        <p>这里只放简单的生活画面。不要研究，读一遍，选一句喜欢的写下来。</p>
-        <button id="refreshRichLifeBtn" class="small-button" type="button">刷新有钱人的世界</button>
-        <p id="richLifeStatus" class="status-text">正在准备...</p>
-        <div id="richLife" class="examples"></div>
-      </details>
-
-      <details class="drawer" open>
-        <summary>今天的“我是...”例子</summary>
-        <p>这些句子要很短，看得懂，能直接抄。</p>
-        <label class="evidence">
-          <span>导入几个 .md 文件</span>
-          <input id="wereadImport" class="email-input" type="file" accept=".md,.txt,text/markdown,text/plain" multiple>
-        </label>
-        <button id="refreshBookBtn" class="small-button" type="button">刷新读书重点</button>
-        <p id="wereadStatus" class="status-text">还没有导入读书重点。</p>
-        <div id="bookHighlights" class="examples"></div>
-      </details>
-
-      <details class="drawer" open>
-        <summary>我的证据历史</summary>
-        <p>连接云端后，换手机也能看到以前写过的“我是...”证据。</p>
-        <div class="cloud-box">
-          <p id="cloudStatus" class="status-text">正在检查云端同步...</p>
-          <input id="emailInput" class="email-input" type="email" placeholder="Email">
-          <div class="password-row">
-            <input id="passwordInput" class="email-input" type="password" placeholder="Password，至少 6 个字符">
-            <button id="togglePasswordBtn" class="inline-button" type="button">显示</button>
-          </div>
-          <button id="loginBtn" class="small-button" type="button">登录</button>
-          <button id="signupBtn" class="small-button secondary-button" type="button">第一次使用：注册</button>
-          <button id="logoutBtn" class="small-button secondary-button" type="button" hidden>退出云端账号</button>
+      <section class="session session-one">
+        <div class="session-heading">
+          <span>Session 1</span>
+          <h2>今天的行动</h2>
+          <p>这里负责执行。不要想太多，只完成下面两步。</p>
         </div>
-        <div id="historyList" class="history-list"></div>
-        <button id="exportHistoryBtn" class="small-button" type="button">导出历史备份</button>
-      </details>
 
-      <details class="drawer" open>
-        <summary>今天 3 个 online key points</summary>
-        <p>打开时会优先读取 Horizon Daily 英文日报的最新 AI 筛选结果，再显示成 3 个重点。</p>
-        <button id="refreshOnlineBtn" class="small-button" type="button">刷新网上资料</button>
-        <p id="onlineStatus" class="status-text">正在准备...</p>
-        <div id="keyPoints" class="examples"></div>
-      </details>
+        <section class="card">
+          <p class="label">第一步</p>
+          <h2 id="actionTitle">学一个词 5 分钟</h2>
+          <p id="actionDetail" class="detail">只学一个你不懂的词，然后用自己的话写一句解释。</p>
 
-      <details class="drawer">
-        <summary>富豪成长框架</summary>
-        <p>这里放成长入口。不要一次看完；每次只点一个，读或看 10 分钟。</p>
-        <div id="growthFramework" class="resources"></div>
-      </details>
+          <label class="done-row">
+            <input id="doneCheck" type="checkbox">
+            <span>我做了 5 分钟</span>
+          </label>
+          <p class="why-check">
+            这个勾不是为了证明你很努力。它只记录一件事：今天你有继续，没有断掉。
+          </p>
 
-      <details class="drawer">
-        <summary>手机安装</summary>
-        <p>部署到 HTTPS 后，用手机浏览器打开，再选择“加入主屏幕”或“安装应用”。</p>
-        <button id="installBtn" type="button" hidden>安装到设备</button>
-      </details>
+          <label class="evidence">
+            <span>第二步：用“我是...”写一句证据</span>
+            <textarea id="evidenceText" rows="3" placeholder="例：我是一个每天慢慢累积财富能力的人，所以我今天学会了一个小概念。"></textarea>
+          </label>
+
+          <button id="nextActionBtn" type="button">保存并换下一个</button>
+        </section>
+
+        <section class="quiet">
+          <p>不需要一下子变厉害。</p>
+          <p>每天一个小证据，慢慢就会变有钱。</p>
+          <p id="appVersion" class="status-text">正在读取版本...</p>
+        </section>
+
+        <details class="drawer" open>
+          <summary>我的证据历史</summary>
+          <p>连接云端后，换手机也能看到以前写过的“我是...”证据。</p>
+          <div class="cloud-box">
+            <p id="cloudStatus" class="status-text">正在检查云端同步...</p>
+            <input id="emailInput" class="email-input" type="email" placeholder="Email">
+            <div class="password-row">
+              <input id="passwordInput" class="email-input" type="password" placeholder="Password，至少 6 个字符">
+              <button id="togglePasswordBtn" class="inline-button" type="button">显示</button>
+            </div>
+            <button id="loginBtn" class="small-button" type="button">登录</button>
+            <button id="signupBtn" class="small-button secondary-button" type="button">第一次使用：注册</button>
+            <button id="logoutBtn" class="small-button secondary-button" type="button" hidden>退出云端账号</button>
+          </div>
+          <div id="historyList" class="history-list"></div>
+          <button id="exportHistoryBtn" class="small-button" type="button">导出历史备份</button>
+        </details>
+      </section>
+
+      <section class="session session-two">
+        <div class="session-heading">
+          <span>Session 2</span>
+          <h2>财富想象和学习</h2>
+          <p>这里负责输入。读几句，选一个重点，让你的目标越来越具体。</p>
+        </div>
+
+        <details class="drawer" open>
+          <summary>有钱人的世界是什么样？</summary>
+          <p>这里只放简单的生活画面。不要研究，读一遍，选一句喜欢的写下来。</p>
+          <button id="refreshRichLifeBtn" class="small-button" type="button">刷新有钱人的世界</button>
+          <p id="richLifeStatus" class="status-text">正在准备...</p>
+          <div id="richLife" class="examples"></div>
+        </details>
+
+        <details class="drawer" open>
+          <summary>今天的“我是...”读书重点</summary>
+          <p>导入你的 .md 文件后，这里只显示干净的中文句子重点。</p>
+          <label class="evidence">
+            <span>导入几个 .md 文件</span>
+            <input id="wereadImport" class="email-input" type="file" accept=".md,.txt,text/markdown,text/plain" multiple>
+          </label>
+          <button id="refreshBookBtn" class="small-button" type="button">刷新读书重点</button>
+          <p id="wereadStatus" class="status-text">还没有导入读书重点。</p>
+          <div id="bookHighlights" class="examples"></div>
+        </details>
+
+        <details class="drawer" open>
+          <summary>它怎么帮你变富有？</summary>
+          <p>它不是直接让钱出现。它帮你每天积累 4 种以后能变成钱的东西：注意力、知识、机会感、行动证据。</p>
+          <ul>
+            <li>注意力：你开始能控制自己，不被焦虑和拖延带走。</li>
+            <li>知识：你慢慢听得懂 AI、商业、钱、产品这些词。</li>
+            <li>机会感：你开始看见别人为什么愿意付钱。</li>
+            <li>行动证据：你不只是想变富有，你每天真的做了一点。</li>
+          </ul>
+        </details>
+
+        <details class="drawer" open>
+          <summary>今天 3 个 online key points</summary>
+          <p>打开时会优先读取 Horizon Daily 英文日报的最新 AI 筛选结果，再显示成 3 个重点。</p>
+          <button id="refreshOnlineBtn" class="small-button" type="button">刷新网上资料</button>
+          <p id="onlineStatus" class="status-text">正在准备...</p>
+          <div id="keyPoints" class="examples"></div>
+        </details>
+
+        <details class="drawer">
+          <summary>富豪成长框架</summary>
+          <p>这里放成长入口。不要一次看完；每次只点一个，读或看 10 分钟。</p>
+          <div id="growthFramework" class="resources"></div>
+        </details>
+
+        <details class="drawer">
+          <summary>手机安装</summary>
+          <p>部署到 HTTPS 后，用手机浏览器打开，再选择“加入主屏幕”或“安装应用”。</p>
+          <button id="installBtn" type="button" hidden>安装到设备</button>
+        </details>
+      </section>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

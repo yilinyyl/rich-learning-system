@@ -1,10 +1,15 @@
 :root {
-  --ink: #17211b;
-  --muted: #66736c;
-  --paper: #fbfaf5;
+  --ink: #1f2421;
+  --muted: #65706b;
+  --paper: #f7f3eb;
   --panel: #ffffff;
-  --line: #dce2da;
-  --green: #1f7a57;
+  --line: #ded8cb;
+  --green: #256d5a;
+  --gold: #a8742a;
+  --rose: #8d4f48;
+  --soft-green: #eef6f1;
+  --soft-gold: #fbf2df;
+  --shadow: 0 16px 40px rgba(31, 36, 33, 0.09);
 }
 
 * {
@@ -14,7 +19,8 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--paper);
+  background:
+    linear-gradient(180deg, #fdfbf6 0%, var(--paper) 42%, #eef4ef 100%);
   color: var(--ink);
   font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
 }
@@ -26,13 +32,13 @@ input {
 }
 
 .app {
-  width: min(100% - 28px, 460px);
+  width: min(100% - 24px, 480px);
   margin: 0 auto;
-  padding: 28px 0 40px;
+  padding: 24px 0 42px;
 }
 
 .header {
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .header p,
@@ -50,21 +56,67 @@ p {
 }
 
 h1 {
-  font-size: 30px;
+  font-size: 32px;
   line-height: 1.15;
+  letter-spacing: 0;
 }
 
 h2 {
-  font-size: 27px;
+  font-size: 25px;
   line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.header-note {
+  margin-top: 10px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.session {
+  margin-top: 24px;
+}
+
+.session-heading {
+  margin: 0 0 12px;
+  padding: 0 2px;
+}
+
+.session-heading span {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.session-heading h2 {
+  font-size: 23px;
+}
+
+.session-heading p {
+  margin-top: 7px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.session-two {
+  padding-top: 12px;
+  border-top: 1px solid rgba(31, 36, 33, 0.12);
 }
 
 .card {
-  padding: 22px;
+  padding: 20px;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 12px;
-  box-shadow: 0 18px 50px rgba(23, 33, 27, 0.1);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
 }
 
 .detail {
@@ -79,8 +131,9 @@ h2 {
   gap: 12px;
   margin-top: 22px;
   padding: 14px;
-  border-radius: 10px;
-  background: #f2f7ef;
+  border: 1px solid #d7e7dc;
+  border-radius: 8px;
+  background: var(--soft-green);
   font-weight: 800;
 }
 
@@ -109,21 +162,29 @@ textarea {
   margin-top: 8px;
   padding: 13px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 8px;
+  background: #fffdf8;
   resize: vertical;
   color: var(--ink);
+}
+
+textarea:focus,
+.email-input:focus {
+  outline: 2px solid rgba(168, 116, 42, 0.24);
+  border-color: var(--gold);
 }
 
 button {
   width: 100%;
   margin-top: 18px;
   border: 0;
-  border-radius: 10px;
-  background: var(--ink);
+  border-radius: 8px;
+  background: #222720;
   color: white;
   padding: 14px 16px;
   cursor: pointer;
   font-weight: 800;
+  box-shadow: 0 8px 18px rgba(31, 36, 33, 0.14);
 }
 
 button:hover {
@@ -140,14 +201,15 @@ button:hover {
   background: transparent;
   border: 1px solid var(--line);
   color: var(--ink);
+  box-shadow: none;
 }
 
 .cloud-box {
   margin-top: 10px;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: white;
+  border-radius: 8px;
+  background: #fffdf8;
 }
 
 .email-input {
@@ -155,7 +217,8 @@ button:hover {
   margin-top: 10px;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 8px;
+  background: #fffdf8;
   color: var(--ink);
 }
 
@@ -175,6 +238,7 @@ button:hover {
   margin-top: 10px;
   padding: 12px 10px;
   font-size: 14px;
+  box-shadow: none;
 }
 
 .status-text {
@@ -191,43 +255,54 @@ button:hover {
 
 .drawer {
   color: var(--muted);
-  border-top: 1px solid var(--line);
-  padding: 14px 0;
+  margin-top: 10px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  overflow: hidden;
 }
 
 .drawer summary {
   cursor: pointer;
   color: var(--ink);
   font-weight: 800;
+  list-style-position: outside;
+  padding: 14px 15px;
+  background: rgba(255, 253, 248, 0.9);
+}
+
+.drawer[open] summary {
+  border-bottom: 1px solid var(--line);
 }
 
 .drawer p {
-  margin-top: 10px;
+  margin: 12px 15px 0;
   line-height: 1.55;
 }
 
 .drawer ul {
-  margin: 10px 0 0;
+  margin: 10px 15px 15px;
   padding-left: 20px;
   line-height: 1.6;
 }
 
 .examples {
   display: grid;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 9px;
+  margin: 12px 15px 15px;
 }
 
 .history-list {
   display: grid;
   gap: 8px;
-  margin-top: 10px;
+  margin: 12px 15px 15px;
 }
 
 .history-item {
   padding: 11px 12px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 8px;
   background: white;
   color: var(--ink);
   line-height: 1.45;
@@ -244,12 +319,13 @@ button:hover {
 
 .example,
 .resource {
-  padding: 11px 12px;
+  padding: 12px 13px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: white;
+  border-radius: 8px;
+  background: #fffdf8;
   color: var(--ink);
-  line-height: 1.45;
+  line-height: 1.55;
+  box-shadow: 0 8px 22px rgba(31, 36, 33, 0.04);
 }
 
 .example a {
@@ -261,7 +337,7 @@ button:hover {
 .resources {
   display: grid;
   gap: 10px;
-  margin-top: 10px;
+  margin: 12px 15px 15px;
 }
 
 .resource strong {
@@ -285,4 +361,38 @@ button:hover {
 
 .resource-links {
   margin-top: 2px;
+}
+
+.drawer > .evidence,
+.drawer > .small-button,
+.drawer > .status-text,
+.drawer > #exportHistoryBtn,
+.drawer > #installBtn {
+  width: calc(100% - 30px);
+  margin-left: 15px;
+  margin-right: 15px;
+}
+
+.drawer > .cloud-box {
+  margin-left: 15px;
+  margin-right: 15px;
+}
+
+@media (max-width: 380px) {
+  .app {
+    width: min(100% - 18px, 480px);
+    padding-top: 18px;
+  }
+
+  h1 {
+    font-size: 29px;
+  }
+
+  h2 {
+    font-size: 23px;
+  }
+
+  .card {
+    padding: 17px;
+  }
 }
