@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-17.12";
+const APP_VERSION = "2026-06-17.13";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -278,6 +278,7 @@ function cleanBookHighlight(text, limit = 96) {
     .replace(/^[-*+]\s+/, "")
     .replace(/^>\s?/, "")
     .replace(/^#+\s*/, "")
+    .replace(/\^[A-Za-z0-9_-]+(?:-[A-Za-z0-9_-]+)*-?/g, "")
     .replace(/\^[0-9０-９]+(?:-[0-9０-９]+)*-?/g, "")
     .replace(/==/g, "")
     .replace(/\*\*/g, "")
@@ -313,6 +314,31 @@ function isChapterHeadingText(text) {
     /^(?:\d+[.、．]\s*)?第[零〇一二两三四五六七八九十百千万0-9０-９]+[章节章篇部回]/.test(compact) ||
     /^(chapter|chap\.?|section|part|volume)\s*[0-9ivxlcdm]+/i.test(value)
   );
+}
+
+function hasChineseText(text) {
+  return /[\u4e00-\u9fff]/.test(String(text || ""));
+}
+
+function isMetadataHighlightLine(text) {
+  const value = String(text || "").trim();
+  if (!value) return true;
+  if (/^[-_]{3,}$/.test(value)) return true;
+  if (/^[A-Za-z_][\w.-]*\s*[:：=]/.test(value)) return true;
+  return /(^|[,\s，])(?:doc_type|lastReadDate|bookId|reviewId|chapterUid|range|type|created|updated|createTime|updateTime|metadata|isbn|cover|tags|source|url|author)\s*[:：=]/i.test(value);
+}
+
+function isCleanChineseHighlight(text) {
+  const value = String(text || "").trim();
+  if (value.length < 14) return false;
+  if (!hasChineseText(value)) return false;
+  if (isMetadataHighlightLine(value)) return false;
+  if (isChapterHeadingText(value)) return false;
+  if (/^(part|section|volume)\s+\d+/i.test(value)) return false;
+  if (/^https?:\/\//i.test(value)) return false;
+  if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}/.test(value)) return false;
+  if (/^[\d\s.。:：、-]+$/.test(value)) return false;
+  return /[。！？；：，、,.!?;:]/.test(value) || value.length >= 24;
 }
 
 function linkedPoint(item) {
@@ -432,12 +458,18 @@ function simpleEvidenceSentence(theme, index) {
 
 function richLifeThemes(count) {
   const insights = activeRichLifeInsights();
-  const themes = insights.length ? pickDailyItems(insights, count, Number(state.richLifeSpin || 0)).map(richLifeTheme) : [];
-  const fallback = ["travel", "support", "learning", "giving", "assets", "body"];
-  while (themes.length < count) {
-    themes.push(fallback[(dailyOffset() + Number(state.richLifeSpin || 0) + themes.length) % fallback.length]);
+  const themes = [];
+  const addTheme = (theme) => {
+    if (theme && !themes.includes(theme)) themes.push(theme);
+  };
+  if (insights.length) {
+    pickDailyItems(insights, Math.max(count * 2, 6), Number(state.richLifeSpin || 0)).map(richLifeTheme).forEach(addTheme);
   }
-  return themes;
+  const fallback = ["travel", "support", "learning", "giving", "assets", "body"];
+  for (let i = 0; themes.length < count && i < fallback.length; i += 1) {
+    addTheme(fallback[(dailyOffset() + Number(state.richLifeSpin || 0) + i) % fallback.length]);
+  }
+  return themes.slice(0, count);
 }
 
 function richLifeInsightFromWiki(page, search) {
@@ -727,19 +759,13 @@ function activeWereadHighlights() {
       book: cleanTitle(item.book || "读书重点"),
       text: cleanBookHighlight(item.text || "", 120)
     }))
-    .filter((item) => item.text.length >= 14 && !isChapterHeadingText(item.text));
+    .filter((item) => isCleanChineseHighlight(item.text));
 }
 
 function isUsefulHighlightLine(line) {
-  const text = cleanBookHighlight(line, 140);
-  if (text.length < 14) return false;
-  if (isChapterHeadingText(text)) return false;
-  if (/^(part|section|volume)\s+\d+/i.test(text)) return false;
-  if (/^(created|updated|author|isbn|cover|tags|source|url|date|metadata|书名|作者)[:：]/i.test(text)) return false;
-  if (/^https?:\/\//i.test(text)) return false;
-  if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}/.test(text)) return false;
-  if (/^[\d\s.。:：、-]+$/.test(text)) return false;
-  return /(^>\s|^[-*+]\s|==|「|」|“|”|。|，|,|\.|：|:)/.test(line);
+  const raw = String(line || "").trim();
+  if (isMetadataHighlightLine(raw)) return false;
+  return isCleanChineseHighlight(cleanBookHighlight(raw, 140));
 }
 
 function parseWereadMarkdown(text, fileName) {
