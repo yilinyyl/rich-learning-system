@@ -16,33 +16,47 @@
       <header class="header">
         <p id="todayLabel">今天</p>
         <h1>富有学习系统</h1>
-        <p class="header-note">每天只需要一个小行动，一个身份小证据，一个更清楚的未来画面。</p>
+        <p class="header-note">每天只做两步：先做一个小行动，再写一句“我是...”证据。</p>
       </header>
 
       <section class="session session-one">
         <div class="session-heading">
-          <span>Session 1</span>
-          <h2>今天的行动</h2>
-          <p>这里负责执行。不要想太多，只完成下面两步。</p>
+          <span>今天两步</span>
+          <h2>先做，再写</h2>
+          <p>第一步负责行动，第二步负责记录你正在变成怎样的人。</p>
         </div>
 
-        <section class="card">
-          <p class="label">第一步</p>
-          <h2 id="actionTitle">学一个词 5 分钟</h2>
-          <p id="actionDetail" class="detail">只学一个你不懂的词，然后用自己的话写一句解释。</p>
+        <section class="steps-card">
+          <div class="step-card step-one">
+            <div class="step-topline">
+              <p class="label">第一步</p>
+              <span>5-15 分钟</span>
+            </div>
+            <h2 id="actionTitle">学一个词 5 分钟</h2>
+            <p id="actionDetail" class="detail">只学一个你不懂的词，然后用自己的话写一句解释。</p>
 
-          <label class="done-row">
-            <input id="doneCheck" type="checkbox">
-            <span>我做了 5 分钟</span>
-          </label>
-          <p class="why-check">
-            这个勾不是为了证明你很努力。它只记录一件事：今天你有继续，没有断掉。
-          </p>
+            <label class="done-row">
+              <input id="doneCheck" type="checkbox">
+              <span>我完成了第一步</span>
+            </label>
+            <p class="why-check">
+              这个勾只记录一件事：今天你有继续，没有断掉。
+            </p>
+          </div>
 
-          <label class="evidence">
-            <span>第二步：用“我是...”写一句证据</span>
-            <textarea id="evidenceText" rows="3" placeholder="例：我是一个每天慢慢累积财富能力的人，所以我今天学会了一个小概念。"></textarea>
-          </label>
+          <div class="step-card step-two">
+            <div class="step-topline">
+              <p class="label">第二步</p>
+              <span>写一句</span>
+            </div>
+            <h2>我是证据</h2>
+            <p class="detail">用“我是...”开头，把今天的小行动变成身份感。</p>
+
+            <label class="evidence">
+              <span>写下你的“我是...”</span>
+              <textarea id="evidenceText" rows="3" placeholder="例：我是一个每天慢慢累积财富能力的人，所以我今天学会了一个小概念。"></textarea>
+            </label>
+          </div>
 
           <button id="nextActionBtn" type="button">保存并换下一个</button>
         </section>
@@ -74,7 +88,7 @@
 
       <section class="session session-two">
         <div class="session-heading">
-          <span>Session 2</span>
+          <span>灵感区</span>
           <h2>财富想象和学习</h2>
           <p>这里负责输入。读几句，选一个重点，让你的目标越来越具体。</p>
         </div>

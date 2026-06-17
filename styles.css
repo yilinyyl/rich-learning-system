@@ -1,15 +1,18 @@
 :root {
-  --ink: #1f2421;
-  --muted: #65706b;
-  --paper: #f7f3eb;
+  --ink: #202235;
+  --muted: #69708a;
+  --paper: #f6f4ff;
   --panel: #ffffff;
-  --line: #ded8cb;
-  --green: #256d5a;
-  --gold: #a8742a;
-  --rose: #8d4f48;
-  --soft-green: #eef6f1;
-  --soft-gold: #fbf2df;
-  --shadow: 0 16px 40px rgba(31, 36, 33, 0.09);
+  --line: #dfdef2;
+  --green: #3a7ca5;
+  --blue: #4776e6;
+  --purple: #7b5cff;
+  --violet: #9a6cff;
+  --rose: #d06aa0;
+  --soft-blue: #edf5ff;
+  --soft-purple: #f2edff;
+  --soft-pink: #fff0f8;
+  --shadow: 0 16px 40px rgba(52, 56, 105, 0.12);
 }
 
 * {
@@ -20,7 +23,7 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    linear-gradient(180deg, #fdfbf6 0%, var(--paper) 42%, #eef4ef 100%);
+    linear-gradient(180deg, #fbfaff 0%, var(--paper) 46%, #eef6ff 100%);
   color: var(--ink);
   font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
 }
@@ -44,7 +47,7 @@ input {
 .header p,
 .label {
   margin: 0 0 8px;
-  color: var(--green);
+  color: var(--purple);
   font-size: 13px;
   font-weight: 800;
 }
@@ -87,10 +90,10 @@ h2 {
   align-items: center;
   margin-bottom: 8px;
   padding: 5px 9px;
-  border: 1px solid var(--line);
+  border: 1px solid #d8d4ff;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--gold);
+  background: var(--soft-purple);
+  color: var(--purple);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0;
@@ -108,15 +111,65 @@ h2 {
 
 .session-two {
   padding-top: 12px;
-  border-top: 1px solid rgba(31, 36, 33, 0.12);
+  border-top: 1px solid rgba(71, 118, 230, 0.16);
 }
 
-.card {
+.card,
+.steps-card {
   padding: 20px;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: var(--shadow);
+}
+
+.steps-card {
+  display: grid;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.step-card {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.step-one {
+  background: var(--soft-blue);
+  border-color: #d2e7ff;
+}
+
+.step-two {
+  background: var(--soft-purple);
+  border-color: #ddd4ff;
+}
+
+.step-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+
+.step-topline .label {
+  margin: 0;
+}
+
+.step-topline span {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.step-card h2 {
+  font-size: 22px;
 }
 
 .detail {
@@ -131,16 +184,16 @@ h2 {
   gap: 12px;
   margin-top: 22px;
   padding: 14px;
-  border: 1px solid #d7e7dc;
+  border: 1px solid #cfe0ff;
   border-radius: 8px;
-  background: var(--soft-green);
+  background: rgba(255, 255, 255, 0.72);
   font-weight: 800;
 }
 
 .done-row input {
   width: 22px;
   height: 22px;
-  accent-color: var(--green);
+  accent-color: var(--purple);
 }
 
 .why-check {
@@ -163,15 +216,15 @@ textarea {
   padding: 13px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fffdf8;
+  background: rgba(255, 255, 255, 0.86);
   resize: vertical;
   color: var(--ink);
 }
 
 textarea:focus,
 .email-input:focus {
-  outline: 2px solid rgba(168, 116, 42, 0.24);
-  border-color: var(--gold);
+  outline: 2px solid rgba(123, 92, 255, 0.22);
+  border-color: var(--purple);
 }
 
 button {
@@ -179,16 +232,16 @@ button {
   margin-top: 18px;
   border: 0;
   border-radius: 8px;
-  background: #222720;
+  background: var(--purple);
   color: white;
   padding: 14px 16px;
   cursor: pointer;
   font-weight: 800;
-  box-shadow: 0 8px 18px rgba(31, 36, 33, 0.14);
+  box-shadow: 0 8px 18px rgba(83, 67, 184, 0.22);
 }
 
 button:hover {
-  background: var(--green);
+  background: var(--blue);
 }
 
 .small-button {
@@ -209,7 +262,7 @@ button:hover {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fffdf8;
+  background: rgba(255, 255, 255, 0.82);
 }
 
 .email-input {
@@ -218,7 +271,7 @@ button:hover {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fffdf8;
+  background: rgba(255, 255, 255, 0.86);
   color: var(--ink);
 }
 
@@ -259,7 +312,7 @@ button:hover {
   padding: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.78);
   overflow: hidden;
 }
 
@@ -269,7 +322,7 @@ button:hover {
   font-weight: 800;
   list-style-position: outside;
   padding: 14px 15px;
-  background: rgba(255, 253, 248, 0.9);
+  background: rgba(250, 248, 255, 0.94);
 }
 
 .drawer[open] summary {
@@ -322,14 +375,14 @@ button:hover {
   padding: 12px 13px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fffdf8;
+  background: #ffffff;
   color: var(--ink);
   line-height: 1.55;
   box-shadow: 0 8px 22px rgba(31, 36, 33, 0.04);
 }
 
 .example a {
-  color: var(--green);
+  color: var(--blue);
   font-weight: 800;
   text-decoration: none;
 }
@@ -354,7 +407,7 @@ button:hover {
 .resource a {
   display: inline-block;
   margin: 8px 10px 0 0;
-  color: var(--green);
+  color: var(--blue);
   font-weight: 800;
   text-decoration: none;
 }
