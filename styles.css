@@ -231,6 +231,7 @@ button:hover {
   background: white;
   color: var(--ink);
   line-height: 1.45;
+  white-space: pre-wrap;
 }
 
 .history-item span {

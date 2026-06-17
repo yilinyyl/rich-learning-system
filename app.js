@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-17.11";
+const APP_VERSION = "2026-06-17.12";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -93,32 +93,56 @@ const richLifeSearches = [
 const richLifeSceneParts = {
   travel: {
     identities: ["能自由旅行的人", "可以舒服出行的人", "有选择权旅行的人"],
-    scenes: ["我去到一个国家时，可以住舒服的五星级酒店", "我可以坐商务舱或头等舱，把旅程本身也变成休息", "我可以临时安排一次回东南亚的旅行，不需要为了钱一直犹豫"],
+    scenes: [
+      "我去到一个国家时，可以住在安静、干净、有好床和好早餐的五星级酒店，早上醒来不用赶时间，先喝咖啡，再慢慢决定今天去哪里",
+      "我可以坐商务舱或头等舱，登机前在 lounge 休息，飞机上躺平睡觉，抵达时身体还有能量，不是狼狈地开始一天",
+      "我可以临时安排一次回东南亚的旅行，买票时主要考虑时间、舒适和安全，而不是一直被最低价格限制"
+    ],
     actions: ["先查一个我想去的城市", "学一句当地语言", "写下我想体验的一家酒店"]
   },
   support: {
     identities: ["不用被琐事拖住的人", "把生活安排得很轻松的人", "有生活支持系统的人"],
-    scenes: ["洗衣、打扫、做饭、预约这些事都有可靠的人或服务帮我处理", "我的时间不用被一堆小事切碎", "我的家干净、安静、有书、有运动空间，也有人帮我维持秩序"],
+    scenes: [
+      "洗衣、打扫、做饭、预约、维修和整理这些事都有可靠的人或服务帮我处理，我不用把最清醒的时间花在重复琐事上",
+      "我的时间不用被一堆小事切碎，日历里有完整的学习、健身、散步、读书和休息时间，生活不是一直救火",
+      "我的家干净、安静、有一个小图书馆、有舒服的书桌、有运动空间，也有人帮我维持秩序，我回家就能进入稳定状态"
+    ],
     actions: ["找出一件可以外包或简化的小事", "整理一个让我更省心的流程", "把房间里一个角落收干净"]
   },
   learning: {
     identities: ["有时间学习世界的人", "可以慢慢学语言和文化的人", "把旅行变成学习的人"],
-    scenes: ["我可以在一个国家住久一点，请当地老师教我语言和文化", "我可以上午上课，下午散步，晚上安静读书", "我可以去巴厘岛学瑜伽，也可以去尼泊尔练冥想"],
+    scenes: [
+      "我可以在一个国家住久一点，请当地老师教我语言和文化，不是走马看花，而是真的理解他们怎么生活、怎么说话、怎么吃饭",
+      "我可以上午上课，下午散步，晚上安静读书；我的旅行不是逃避工作，而是扩大眼界和能力",
+      "我可以去巴厘岛学瑜伽，也可以去尼泊尔练冥想，给身体和心灵一整段完整的时间，不需要向忙碌证明自己"
+    ],
     actions: ["学一个新词", "收藏一个想上的课程", "写一句我今天学到的东西"]
   },
   giving: {
     identities: ["有能力慷慨的人", "可以稳定捐钱的人", "让钱也服务善意的人"],
-    scenes: ["我可以每年认真捐一笔钱，而不是只在有余力时才善良", "我可以支持教育、贫困、健康或环境项目", "我可以照顾家人，也可以帮助陌生人过得好一点"],
+    scenes: [
+      "我可以每年认真捐一笔钱，而不是只在有余力时才善良；捐赠会被计划、记录和复盘，真的帮助到人",
+      "我可以支持教育、贫困、健康或环境项目，选择可靠组织，保留凭证，也知道自己的钱产生了什么影响",
+      "我可以照顾家人，也可以帮助陌生人过得好一点；钱不只是安全感，也是我表达价值观的工具"
+    ],
     actions: ["写下一个我想支持的对象", "存下一点未来捐赠基金", "查一个可靠的公益项目"]
   },
   assets: {
     identities: ["有被动收入的人", "让钱慢慢替我工作的人", "资产越来越清楚的人"],
-    scenes: ["我的生活费不只靠工资，也有资产和系统在支持我", "我可以安心健身、读书、旅行，因为现金流是清楚的", "我拥有自己的房子和长期资产，不需要每天为生存紧张"],
+    scenes: [
+      "我的生活费不只靠工资，也有资产、储蓄、投资和系统在支持我；我每个月都清楚钱从哪里来、到哪里去",
+      "我可以安心健身、读书、旅行，因为现金流是清楚的，账目是干净的，税务和重要决定也有人专业协助",
+      "我拥有自己的房子和长期资产，不需要每天为生存紧张；我做决定时看长期价值，而不是只看眼前压力"
+    ],
     actions: ["记录一笔钱", "看一眼储蓄进度", "写下一个未来资产目标"]
   },
   body: {
     identities: ["有时间照顾身体的人", "健康又自由的人", "把身体放在第一位的人"],
-    scenes: ["我可以固定健身、冥想、睡好觉，不用一直赶时间", "我可以请教练、上瑜伽课、吃健康食物", "我的身体不是被工作消耗完，而是被生活好好照顾"],
+    scenes: [
+      "我可以固定健身、冥想、睡好觉，不用一直赶时间；我的一天有空间给身体恢复，不是只剩下疲惫",
+      "我可以请教练、上瑜伽课、吃健康食物、做体检，也可以为了健康安排旅行和课程",
+      "我的身体不是被工作消耗完，而是被生活好好照顾；我有时间变强壮、变柔软、变稳定"
+    ],
     actions: ["走路 10 分钟", "做 5 分钟伸展", "安静呼吸 5 分钟"]
   }
 };
@@ -254,6 +278,7 @@ function cleanBookHighlight(text, limit = 96) {
     .replace(/^[-*+]\s+/, "")
     .replace(/^>\s?/, "")
     .replace(/^#+\s*/, "")
+    .replace(/\^[0-9０-９]+(?:-[0-9０-９]+)*-?/g, "")
     .replace(/==/g, "")
     .replace(/\*\*/g, "")
     .replace(/\[\[|\]\]/g, "")
@@ -266,6 +291,7 @@ function cleanBookHighlight(text, limit = 96) {
   for (let i = 0; i < 4; i += 1) {
     result = result
       .replace(/\s*(?:位置|页码|页|loc(?:ation)?|page|p)\.?\s*[:：]?\s*[0-9０-９,\-–—]+\s*$/i, "")
+      .replace(/\s*\^[0-9０-９]+(?:-[0-9０-９]+)*-?\s*$/u, "")
       .replace(/\s*[（(【\[]\s*(?:位置|页码|页|loc(?:ation)?|page|p)?\.?\s*[:：]?\s*[0-9０-９,\-–—]+\s*[)）】\]]\s*$/i, "")
       .replace(/\s*[（(【\[]\s*[0-9０-９]+(?:\s*[-–—]\s*[0-9０-９]+)?\s*[)）】\]]\s*$/u, "")
       .replace(/\s*[|｜·•#^]\s*[0-9０-９a-z-]{1,16}\s*$/i, "")
@@ -686,6 +712,10 @@ function readableDate(dateKey) {
   });
 }
 
+function makeEntryId() {
+  return `${todayKey()}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 function activeOnlineInsights() {
   return onlineInsights.length ? onlineInsights : Array.isArray(state.onlineInsights) ? state.onlineInsights : [];
 }
@@ -805,7 +835,13 @@ function saveEvidenceHistory() {
 
   const history = Array.isArray(state.history) ? state.history : [];
   const date = todayKey();
-  const existing = history.find((item) => item.date === date);
+  let id = state.currentHistoryId || makeEntryId();
+  let existing = history.find((item) => item.id === id);
+
+  if (existing && existing.date !== date) {
+    id = makeEntryId();
+    existing = null;
+  }
 
   if (existing) {
     existing.text = text;
@@ -813,6 +849,7 @@ function saveEvidenceHistory() {
     existing.updatedAt = new Date().toISOString();
   } else {
     history.unshift({
+      id,
       date,
       text,
       action: currentAction().title,
@@ -820,6 +857,7 @@ function saveEvidenceHistory() {
     });
   }
 
+  state.currentHistoryId = id;
   state.history = history.slice(0, 90);
   queueCloudSave();
 }
@@ -915,7 +953,10 @@ function renderHistory() {
   history.slice(0, 14).forEach((entry) => {
     const item = document.createElement("div");
     item.className = "history-item";
-    item.innerHTML = `<span>${readableDate(entry.date)} · ${entry.action || "行动证据"}</span>${entry.text}`;
+    const meta = document.createElement("span");
+    meta.textContent = `${readableDate(entry.date)} · ${entry.action || "行动证据"}`;
+    item.append(meta);
+    item.append(document.createTextNode(entry.text));
     historyRoot.append(item);
   });
 }
@@ -939,6 +980,7 @@ function bindEvents() {
     state.actionIndex = (Number(state.actionIndex || 0) + 1) % actions.length;
     state.done = false;
     state.evidence = "";
+    state.currentHistoryId = null;
     saveState();
     render();
   });
@@ -989,7 +1031,7 @@ function bindEvents() {
       render();
       if (status) {
         const count = activeWereadHighlights().length;
-        status.textContent = count ? "已刷新读书重点和“我是...”句子。" : "还没有导入读书重点。";
+        status.textContent = count ? "已刷新读书重点。" : "还没有导入读书重点。";
       }
     });
   }
@@ -1176,6 +1218,7 @@ async function loadCloudHistory() {
   }
 
   state.history = (data || []).map((entry) => ({
+    id: `${entry.date}-${new Date(entry.updated_at || Date.now()).getTime()}`,
     date: entry.date,
     text: entry.text,
     action: entry.action,
@@ -1199,13 +1242,19 @@ function queueCloudSave() {
 }
 
 async function syncTodayEvidence() {
-  const text = String(state.evidence || "").trim();
+  const today = todayKey();
+  const todayEntries = (Array.isArray(state.history) ? state.history : [])
+    .filter((entry) => entry.date === today && String(entry.text || "").trim())
+    .sort((a, b) => new Date(a.updatedAt || 0) - new Date(b.updatedAt || 0));
+  const text = todayEntries.length
+    ? todayEntries.map((entry) => String(entry.text || "").trim()).join("\n\n")
+    : String(state.evidence || "").trim();
   if (!supabaseClient || !currentUser || !text) return;
 
   const { error } = await supabaseClient.from("evidence_entries").upsert(
     {
       user_id: currentUser.id,
-      date: todayKey(),
+      date: today,
       text,
       action: currentAction().title,
       updated_at: new Date().toISOString()
