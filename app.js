@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-17.4";
+const APP_VERSION = "2026-06-17.5";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -245,6 +245,20 @@ function cleanSummary(text, limit = 160) {
   return String(text || "")
     .replace(/\s+/g, " ")
     .replace(/[<>]/g, "")
+    .trim()
+    .slice(0, limit);
+}
+
+function cleanBookHighlight(text, limit = 96) {
+  return String(text || "")
+    .replace(/^[-*+]\s+/, "")
+    .replace(/^>\s?/, "")
+    .replace(/^#+\s*/, "")
+    .replace(/==/g, "")
+    .replace(/\*\*/g, "")
+    .replace(/\[\[|\]\]/g, "")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/\s+/g, " ")
     .trim()
     .slice(0, limit);
 }
@@ -650,6 +664,43 @@ function activeOnlineInsights() {
   return onlineInsights.length ? onlineInsights : Array.isArray(state.onlineInsights) ? state.onlineInsights : [];
 }
 
+function activeWereadHighlights() {
+  return Array.isArray(state.wereadHighlights) ? state.wereadHighlights : [];
+}
+
+function isUsefulHighlightLine(line) {
+  const text = cleanBookHighlight(line, 140);
+  if (text.length < 14) return false;
+  if (/^(created|updated|author|isbn|cover|tags|source|url|date|metadata|书名|作者)[:：]/i.test(text)) return false;
+  if (/^https?:\/\//i.test(text)) return false;
+  if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}/.test(text)) return false;
+  return /(^>\s|^[-*+]\s|==|「|」|“|”|。|，|,|\.|：|:)/.test(line);
+}
+
+function parseWereadMarkdown(text, fileName) {
+  const book = cleanTitle(String(fileName || "读书重点").replace(/\.(md|txt)$/i, ""));
+  const lines = String(text || "").split(/\r?\n/);
+  return lines
+    .filter(isUsefulHighlightLine)
+    .map((line) => ({
+      book,
+      text: cleanBookHighlight(line)
+    }))
+    .filter((item) => item.text)
+    .slice(0, 40);
+}
+
+function bookIdentityExamples() {
+  return pickDailyItems(activeWereadHighlights(), 3, Number(state.bookSpin || 0)).map((item, index) => {
+    const templates = [
+      `我是一个会把书变成行动的人，所以我今天只实践一句：《${item.book}》${item.text}`,
+      `我是一个会从书里提炼重点的人，所以我今天记住：《${item.book}》${item.text}`,
+      `我是一个慢慢变清醒的人，所以我今天用这句话提醒自己：《${item.book}》${item.text}`
+    ];
+    return templates[(dailyOffset() + index) % templates.length];
+  });
+}
+
 function onlineKeyPoints() {
   const items = activeOnlineInsights();
   const pinned = items.filter((item) => item.pinned);
@@ -716,8 +767,13 @@ function render() {
   document.querySelector("#evidenceText").value = state.evidence || "";
   const examples = document.querySelector("#examples");
   examples.innerHTML = "";
+  const bookExamples = bookIdentityExamples();
   const onlineIdentityExamples = insightIdentityExamples();
-  const examplePool = onlineIdentityExamples.length ? onlineIdentityExamples : [...action.examples, ...extraExamples];
+  const examplePool = bookExamples.length
+    ? [...bookExamples, ...onlineIdentityExamples]
+    : onlineIdentityExamples.length
+      ? onlineIdentityExamples
+      : [...action.examples, ...extraExamples];
   const dailyExamples = pickDailyItems(examplePool, 4, Number(state.actionIndex || 0));
   dailyExamples.forEach((example) => {
     const item = document.createElement("div");
@@ -725,6 +781,14 @@ function render() {
     item.textContent = example;
     examples.append(item);
   });
+
+  const wereadStatus = document.querySelector("#wereadStatus");
+  if (wereadStatus) {
+    const count = activeWereadHighlights().length;
+    wereadStatus.textContent = count
+      ? `已导入 ${count} 条读书重点，会用于生成“我是...”例子。`
+      : "还没有导入读书重点。";
+  }
 
   const richLifeRoot = document.querySelector("#richLife");
   richLifeRoot.innerHTML = "";
@@ -832,6 +896,39 @@ function bindEvents() {
         if (status) status.textContent = "Horizon 暂时抓不到，已经先换成本地备用 key points。";
         render();
       });
+    });
+  }
+
+  const wereadImport = document.querySelector("#wereadImport");
+  if (wereadImport) {
+    wereadImport.addEventListener("change", async (event) => {
+      const status = document.querySelector("#wereadStatus");
+      const files = Array.from(event.target.files || []);
+      if (!files.length) return;
+      if (status) status.textContent = "正在读取 Obsidian / WeRead 文件...";
+
+      try {
+        const imported = [];
+        for (const file of files) {
+          const text = await file.text();
+          imported.push(...parseWereadMarkdown(text, file.name));
+        }
+
+        const existing = activeWereadHighlights();
+        const merged = [...imported, ...existing]
+          .filter((item, index, list) => item.text && list.findIndex((other) => other.book === item.book && other.text === item.text) === index)
+          .slice(0, 160);
+
+        state.wereadHighlights = merged;
+        state.bookSpin = Number(state.bookSpin || 0) + 1;
+        saveState();
+        render();
+        if (status) status.textContent = imported.length ? `已导入 ${imported.length} 条读书重点。` : "没有识别到可用重点。可以选择 WeRead 导出的 Markdown 文件。";
+      } catch {
+        if (status) status.textContent = "导入失败。请确认文件是 Markdown 或 txt。";
+      } finally {
+        event.target.value = "";
+      }
     });
   }
 
