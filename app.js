@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-17.6";
+const APP_VERSION = "2026-06-17.7";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -258,6 +258,11 @@ function cleanBookHighlight(text, limit = 96) {
     .replace(/\*\*/g, "")
     .replace(/\[\[|\]\]/g, "")
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/^\s*(第[一二三四五六七八九十百千万\d]+[章节章篇部].*|chapter\s+\d+.*|chap\.\s*\d+.*)$/i, "")
+    .replace(/\s*(?:第\s*\d+\s*页|页码\s*\d+|位置\s*\d+|loc\.?\s*\d+|page\s*\d+|p\.?\s*\d+)\s*$/i, "")
+    .replace(/\s*[（(]\s*(?:第\s*)?\d+\s*(?:页|章|节|%|\/\d+)?\s*[)）]\s*$/g, "")
+    .replace(/\s*(?:#|\^)?\d{1,6}\s*$/g, "")
+    .replace(/[·•]\s*\d{1,6}\s*$/g, "")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, limit);
@@ -671,9 +676,12 @@ function activeWereadHighlights() {
 function isUsefulHighlightLine(line) {
   const text = cleanBookHighlight(line, 140);
   if (text.length < 14) return false;
+  if (/^(第[一二三四五六七八九十百千万\d]+[章节章篇部]|chapter\s+\d+|chap\.\s*\d+)/i.test(text)) return false;
+  if (/^(part|section|volume)\s+\d+/i.test(text)) return false;
   if (/^(created|updated|author|isbn|cover|tags|source|url|date|metadata|书名|作者)[:：]/i.test(text)) return false;
   if (/^https?:\/\//i.test(text)) return false;
   if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}/.test(text)) return false;
+  if (/^[\d\s.。:：、-]+$/.test(text)) return false;
   return /(^>\s|^[-*+]\s|==|「|」|“|”|。|，|,|\.|：|:)/.test(line);
 }
 
@@ -752,6 +760,37 @@ function renderBookHighlights() {
     item.append(highlight.text);
     root.append(item);
   });
+}
+
+async function importWereadFiles(files, status) {
+  const markdownFiles = Array.from(files || []).filter((file) => /\.(md|txt)$/i.test(file.name));
+  if (!markdownFiles.length) {
+    if (status) status.textContent = "没有找到 Markdown 或 txt 文件。";
+    return;
+  }
+
+  if (status) status.textContent = `正在读取 ${markdownFiles.length} 个 Obsidian / WeRead 文件...`;
+
+  try {
+    const imported = [];
+    for (const file of markdownFiles) {
+      const text = await file.text();
+      imported.push(...parseWereadMarkdown(text, file.name));
+    }
+
+    const existing = activeWereadHighlights();
+    const merged = [...imported, ...existing]
+      .filter((item, index, list) => item.text && list.findIndex((other) => other.book === item.book && other.text === item.text) === index)
+      .slice(0, 200);
+
+    state.wereadHighlights = merged;
+    state.bookSpin = Number(state.bookSpin || 0) + 1;
+    saveState();
+    render();
+    if (status) status.textContent = imported.length ? `已导入 ${imported.length} 条句子重点。` : "没有识别到句子重点。已过滤章节标题、页码和位置号。";
+  } catch {
+    if (status) status.textContent = "导入失败。请确认文件是 Markdown 或 txt。";
+  }
 }
 
 function onlineKeyPoints() {
@@ -959,30 +998,19 @@ function bindEvents() {
       const status = document.querySelector("#wereadStatus");
       const files = Array.from(event.target.files || []);
       if (!files.length) return;
-      if (status) status.textContent = "正在读取 Obsidian / WeRead 文件...";
+      await importWereadFiles(files, status);
+      event.target.value = "";
+    });
+  }
 
-      try {
-        const imported = [];
-        for (const file of files) {
-          const text = await file.text();
-          imported.push(...parseWereadMarkdown(text, file.name));
-        }
-
-        const existing = activeWereadHighlights();
-        const merged = [...imported, ...existing]
-          .filter((item, index, list) => item.text && list.findIndex((other) => other.book === item.book && other.text === item.text) === index)
-          .slice(0, 160);
-
-        state.wereadHighlights = merged;
-        state.bookSpin = Number(state.bookSpin || 0) + 1;
-        saveState();
-        render();
-        if (status) status.textContent = imported.length ? `已导入 ${imported.length} 条读书重点。` : "没有识别到可用重点。可以选择 WeRead 导出的 Markdown 文件。";
-      } catch {
-        if (status) status.textContent = "导入失败。请确认文件是 Markdown 或 txt。";
-      } finally {
-        event.target.value = "";
-      }
+  const wereadFolderImport = document.querySelector("#wereadFolderImport");
+  if (wereadFolderImport) {
+    wereadFolderImport.addEventListener("change", async (event) => {
+      const status = document.querySelector("#wereadStatus");
+      const files = Array.from(event.target.files || []);
+      if (!files.length) return;
+      await importWereadFiles(files, status);
+      event.target.value = "";
     });
   }
 
