@@ -1,5 +1,5 @@
 param(
-  [string]$Message = "Update Supabase config"
+  [string]$Message = "Publish app update"
 )
 
 $ErrorActionPreference = "Stop"
