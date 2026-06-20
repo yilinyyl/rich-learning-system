@@ -24,6 +24,70 @@
 - Online key points：优先读取 Horizon 英文日报，失败时显示备用重点。
 - PWA：可以通过 GitHub Pages 部署，并添加到手机主屏幕。
 
+## FAQ / Privacy / Cost
+
+### PWA 是什么？
+
+PWA = Progressive Web App。简单说，它是“可以像手机 App 一样安装到主屏幕的网站”。
+
+这个项目不是 App Store / Google Play 里的原生 app。它是一个静态网页，但因为包含 `manifest.json`、`sw.js`，并且可以部署到 HTTPS，所以手机浏览器可以把它加入主屏幕。
+
+### 如果别人用我的部署网址注册，我会看到他们的 email 吗？
+
+如果这个 app 连接的是你的 Supabase project，那么你作为 Supabase project owner，可以在 Supabase dashboard 看到：
+
+- Authentication 里的用户 email。
+- 用户 ID。
+- `evidence_entries` 里的资料。
+
+普通用户在 app 里应该只能看到自己的资料；这依赖 Supabase Row Level Security。项目管理者在 Supabase 后台拥有管理员视角，所以能看到 project 里的数据。
+
+如果你不想管理别人的资料，建议让别人 fork 这个 repository，并填写他们自己的 Supabase project。
+
+### 为什么两句“我是...”会有同一个 user ID？
+
+这是正常的。`user_id` 代表“是谁写的”。同一个账号写的多句证据，应该拥有同一个 `user_id`。
+
+要检查的是每一句证据是否有不同的 `id`，并且是否在 Supabase 里成为不同 row：
+
+| user_id | id | text |
+| --- | --- | --- |
+| same-user | entry-1 | 我是...第一句 |
+| same-user | entry-2 | 我是...第二句 |
+
+如果同一天的多句证据被合并到同一个 row，说明 Supabase 可能还在旧表结构。请执行下面的旧表迁移 SQL，把主键从 `(user_id, date)` 改成 `(user_id, id)`。
+
+### 这个 app 背后有用 LLM 吗？
+
+目前没有。这个 app 没有调用 OpenAI、ChatGPT、Claude、Gemini 或其他 LLM API。
+
+目前它主要使用：
+
+- 本地 JavaScript。
+- GitHub Pages 静态部署。
+- Supabase 登录和资料保存。
+- Horizon feed / GitHub / DEV / Wikipedia 等公开资料读取。
+- 用户导入的 `.md` / `.txt` 文件清理。
+
+“有钱人的世界”里很多句子是写在代码里的模板；online key points 是从公开来源抓取并显示，不是 app 自己调用 LLM 生成。
+
+### 目前会产生费用吗？
+
+通常不会。当前项目用到的东西大多有免费方案：
+
+- GitHub Pages：public repository 通常免费。
+- Supabase：有免费额度。
+- Horizon / GitHub / DEV / Wikipedia 公开读取：通常免费。
+- LLM API：目前没有使用，所以不会产生 LLM API 费用。
+
+可能产生费用的情况：
+
+- Supabase 用量超过免费额度。
+- 很多人注册并写入大量资料。
+- 使用 private repository 的 GitHub Pages，受 GitHub plan 限制。
+- 购买 custom domain。
+- 未来接入 OpenAI 或其他 AI API。
+
 ## 如果你只是想使用
 
 1. 用手机浏览器打开部署后的 HTTPS 网址。
