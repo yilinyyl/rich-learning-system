@@ -16,24 +16,41 @@
       <header class="header">
         <p id="todayLabel">今天</p>
         <h1>富有学习系统</h1>
-        <p class="header-note">每天只做两步：先做一个小行动，再写一句“我是...”证据。</p>
+        <p class="header-note">每天只做三步：选一个小行动，写一句行动证据，再写一句未来身份。</p>
       </header>
 
       <section class="session session-one">
         <div class="session-heading">
-          <span>今天两步</span>
-          <h2>先做，再写</h2>
-          <p>第一步负责行动，第二步负责记录你正在变成怎样的人。</p>
+          <span>今天三步</span>
+          <h2>先选择，再确认，再成为</h2>
+          <p>第一步选你真实做了什么；第二步根据行动写证据；第三步根据愿景写你想成为谁。</p>
         </div>
 
         <section class="steps-card">
           <div class="step-card step-one">
             <div class="step-topline">
               <p class="label">第一步</p>
-              <span>5-15 分钟</span>
+              <span>5-10 分钟</span>
             </div>
-            <h2 id="actionTitle">学一个词 5 分钟</h2>
-            <p id="actionDetail" class="detail">只学一个你不懂的词，然后用自己的话写一句解释。</p>
+            <h2>我刚刚做了什么？</h2>
+            <p class="detail">可以点一个建议，也可以自己写。这里记录真实发生的小行动。</p>
+
+            <div class="action-choice-list">
+              <button id="suggestedActionBtn" class="choice-button" type="button">
+                <span>系统建议</span>
+                <strong id="actionTitle">学一个词 5 分钟</strong>
+                <small id="actionDetail">只学一个你不懂的词，然后用自己的话写一句解释。</small>
+              </button>
+              <button class="choice-button quick-action" type="button" data-action="我读了 5-10 分钟书。">我读了 5-10 分钟书</button>
+              <button class="choice-button quick-action" type="button" data-action="我整理了一笔钱或一个账户。">我整理了一笔钱</button>
+              <button class="choice-button quick-action" type="button" data-action="我运动、拉伸或冥想了 5-10 分钟。">我运动 / 冥想了</button>
+              <button class="choice-button quick-action" type="button" data-action="我观察了一个别人为什么愿意付钱的场景。">我观察了一个付钱场景</button>
+            </div>
+
+            <label class="evidence compact-field">
+              <span>或者自己写：我刚刚做了...</span>
+              <textarea id="customActionText" rows="2" placeholder="例：我看了 8 分钟 AI 教程，并写下一个我听懂的词。"></textarea>
+            </label>
 
             <label class="done-row">
               <input id="doneCheck" type="checkbox">
@@ -47,18 +64,32 @@
           <div class="step-card step-two">
             <div class="step-topline">
               <p class="label">第二步</p>
-              <span>写一句</span>
+              <span>根据第一步</span>
             </div>
-            <h2>我是证据</h2>
-            <p class="detail">用“我是...”开头，把今天的小行动变成身份感。</p>
+            <h2>行动证据</h2>
+            <p class="detail">根据你第一步真实做的事，写一句“我是...”证据。</p>
 
             <label class="evidence">
-              <span>写下你的“我是...”</span>
+              <span>我是...</span>
               <textarea id="evidenceText" rows="3" placeholder="例：我是一个每天慢慢累积财富能力的人，所以我今天学会了一个小概念。"></textarea>
             </label>
           </div>
 
-          <button id="nextActionBtn" type="button">保存并换下一个</button>
+          <div class="step-card step-three">
+            <div class="step-topline">
+              <p class="label">第三步</p>
+              <span>根据愿景</span>
+            </div>
+            <h2>未来身份</h2>
+            <p class="detail">根据你希望自己成为什么样的人，再写一句“我是...”。这句可以更大、更自由。</p>
+
+            <label class="evidence">
+              <span>我希望成为...</span>
+              <textarea id="futureIdentityText" rows="3" placeholder="例：我是一个有时间、有钱、有健康身体，也能自由学习和旅行的人。"></textarea>
+            </label>
+          </div>
+
+          <button id="nextActionBtn" type="button">保存今天这三步</button>
         </section>
 
         <section class="quiet">

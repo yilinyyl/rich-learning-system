@@ -26,33 +26,38 @@ Expected result:
 Steps:
 1. Open `index.html` locally or open the GitHub Pages URL.
 2. Confirm the page shows the app title.
-3. Confirm the page shows the first-step and second-step cards.
+3. Confirm the page shows the first-step, second-step, and third-step cards.
 
 Expected result:
 - No blank page.
-- First step and second step are visually separate.
+- First step, second step, and third step are visually separate.
 - App version is visible.
 
-### TC-2 First Step Completion
+### TC-2 First Step Selection and Completion
 
 Steps:
-1. Check “我完成了第一步”.
-2. Refresh the page.
+1. Select one quick action or type a custom action.
+2. Check “我完成了第一步”.
+3. Refresh the page.
 
 Expected result:
+- The selected/custom action is saved locally.
 - The checkbox state is saved locally.
 
-### TC-3 Evidence Save
+### TC-3 Evidence and Future Identity Save
 
 Steps:
-1. Type an “我是...” sentence.
-2. Confirm it appears in history.
-3. Click “保存并换下一个”.
-4. Type a second “我是...” sentence.
+1. Select or type a first-step action.
+2. Type a second-step “我是...” action evidence sentence.
+3. Type a third-step “我是...” future identity sentence.
+4. Confirm the combined entry appears in history.
+5. Click save / next.
+6. Type a second entry.
 
 Expected result:
-- Both sentences appear in history.
-- The second sentence does not overwrite the first local history entry.
+- The saved history entry includes first step, second step, and third step.
+- Both entries appear in history.
+- The second entry does not overwrite the first local history entry.
 
 ### TC-4 Cloud Login
 
@@ -63,7 +68,7 @@ Precondition:
 
 Steps:
 1. Register or log in.
-2. Type an “我是...” sentence.
+2. Type a complete three-step entry.
 3. Wait for cloud save status.
 4. Open the app on another browser/device and log in with the same account.
 
@@ -92,7 +97,7 @@ Precondition:
 
 Steps:
 1. Log in.
-2. Save two different “我是...” sentences on the same day.
+2. Save two different three-step entries on the same day.
 3. Refresh or open on another device.
 
 Expected result:
@@ -175,7 +180,7 @@ Expected result:
 - Changing `app.js` may break local history or cloud sync.
 - Changing `sw.js` without bumping cache can make phones show stale UI.
 - Changing WeRead filters can accidentally hide useful Chinese highlights.
-- Changing UI copy can make the two-step flow feel confusing again.
+- Changing UI copy can make the three-step flow feel confusing again.
 
 ## 6. Release Command
 

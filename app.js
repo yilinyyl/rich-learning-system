@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-20.2";
+const APP_VERSION = "2026-06-20.3";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -774,6 +774,34 @@ function currentAction() {
   return actions[Number(state.actionIndex || 0) % actions.length];
 }
 
+function selectedActionText() {
+  const custom = String(state.customAction || "").trim();
+  if (custom) return custom;
+  return currentAction().title;
+}
+
+function buildEvidenceRecordText() {
+  const actionText = selectedActionText();
+  const evidence = String(state.evidence || "").trim();
+  const futureIdentity = String(state.futureIdentity || "").trim();
+  const parts = [];
+  if (actionText) parts.push(`第一步：${actionText}`);
+  if (evidence) parts.push(`第二步：${evidence}`);
+  if (futureIdentity) parts.push(`第三步：${futureIdentity}`);
+  return parts.join("\n\n");
+}
+
+function restoreDraftFromHistoryEntry(entry) {
+  const text = String(entry?.text || "");
+  if (!text.trim()) return;
+  const first = text.match(/第一步：([\s\S]*?)(?:\n\n第二步：|\n\n第三步：|$)/);
+  const second = text.match(/第二步：([\s\S]*?)(?:\n\n第三步：|$)/);
+  const third = text.match(/第三步：([\s\S]*)$/);
+  state.customAction = first ? first[1].trim() : entry.action || "";
+  state.evidence = second ? second[1].trim() : text.trim();
+  state.futureIdentity = third ? third[1].trim() : "";
+}
+
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -898,7 +926,7 @@ function richLifeLines() {
 }
 
 function saveEvidenceHistory() {
-  const text = String(state.evidence || "").trim();
+  const text = buildEvidenceRecordText();
   if (!text) return;
 
   const history = Array.isArray(state.history) ? state.history : [];
@@ -913,14 +941,14 @@ function saveEvidenceHistory() {
 
   if (existing) {
     existing.text = text;
-    existing.action = currentAction().title;
+    existing.action = selectedActionText();
     existing.updatedAt = new Date().toISOString();
   } else {
     history.unshift({
       id,
       date,
       text,
-      action: currentAction().title,
+      action: selectedActionText(),
       updatedAt: new Date().toISOString()
     });
   }
@@ -942,7 +970,11 @@ function render() {
   document.querySelector("#actionTitle").textContent = action.title;
   document.querySelector("#actionDetail").textContent = action.detail;
   document.querySelector("#doneCheck").checked = Boolean(state.done);
+  const customActionText = document.querySelector("#customActionText");
+  if (customActionText) customActionText.value = state.customAction || "";
   document.querySelector("#evidenceText").value = state.evidence || "";
+  const futureIdentityText = document.querySelector("#futureIdentityText");
+  if (futureIdentityText) futureIdentityText.value = state.futureIdentity || "";
   const examples = document.querySelector("#examples");
   if (examples) {
     examples.innerHTML = "";
@@ -1035,6 +1067,35 @@ function bindEvents() {
     saveState();
   });
 
+  const suggestedActionBtn = document.querySelector("#suggestedActionBtn");
+  if (suggestedActionBtn) {
+    suggestedActionBtn.addEventListener("click", () => {
+      state.customAction = currentAction().title;
+      saveEvidenceHistory();
+      saveState();
+      render();
+    });
+  }
+
+  document.querySelectorAll(".quick-action").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.customAction = button.dataset.action || button.textContent.trim();
+      saveEvidenceHistory();
+      saveState();
+      render();
+    });
+  });
+
+  const customActionText = document.querySelector("#customActionText");
+  if (customActionText) {
+    customActionText.addEventListener("input", (event) => {
+      state.customAction = event.target.value;
+      saveEvidenceHistory();
+      saveState();
+      renderHistory();
+    });
+  }
+
   document.querySelector("#evidenceText").addEventListener("input", (event) => {
     state.evidence = event.target.value;
     saveEvidenceHistory();
@@ -1042,12 +1103,24 @@ function bindEvents() {
     renderHistory();
   });
 
+  const futureIdentityText = document.querySelector("#futureIdentityText");
+  if (futureIdentityText) {
+    futureIdentityText.addEventListener("input", (event) => {
+      state.futureIdentity = event.target.value;
+      saveEvidenceHistory();
+      saveState();
+      renderHistory();
+    });
+  }
+
   document.querySelector("#nextActionBtn").addEventListener("click", () => {
     saveEvidenceHistory();
     saveState();
     state.actionIndex = (Number(state.actionIndex || 0) + 1) % actions.length;
     state.done = false;
+    state.customAction = "";
     state.evidence = "";
+    state.futureIdentity = "";
     state.currentHistoryId = null;
     saveState();
     render();
@@ -1308,7 +1381,7 @@ async function loadCloudHistory() {
 
   const today = state.history.find((entry) => entry.date === todayKey());
   if (today && !String(state.evidence || "").trim()) {
-    state.evidence = today.text;
+    restoreDraftFromHistoryEntry(today);
   }
 
   saveState();

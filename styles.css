@@ -146,6 +146,11 @@ h2 {
   border-color: #c8dfcd;
 }
 
+.step-three {
+  background: var(--soft-pink);
+  border-color: #ead7c8;
+}
+
 .step-topline {
   display: flex;
   align-items: center;
@@ -170,6 +175,48 @@ h2 {
 
 .step-card h2 {
   font-size: 22px;
+}
+
+.action-choice-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.choice-button {
+  width: 100%;
+  margin-top: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--ink);
+  box-shadow: none;
+  text-align: left;
+  line-height: 1.45;
+}
+
+.choice-button:hover {
+  background: #f7fbf5;
+  color: var(--ink);
+}
+
+.choice-button span,
+.choice-button small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.choice-button strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 16px;
+}
+
+.compact-field {
+  margin-top: 12px;
 }
 
 .detail {

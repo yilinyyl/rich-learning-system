@@ -15,29 +15,33 @@
 ## 3. Core User Journey
 
 1. 用户打开手机 app。
-2. 用户看到“第一步：小行动”，用 5 到 15 分钟开始。
+2. 用户看到“第一步：小行动”，可以选择建议动作，也可以自己填写 5 到 10 分钟内真实做了什么。
 3. 用户勾选完成第一步。
-4. 用户看到“第二步：我是证据”，写一句以“我是...”开头的话。
-5. 用户保存并换下一个行动。
-6. 用户之后可以在历史里回顾自己写过的证据。
-7. 如果登录 Supabase，同一个账号换手机后也能恢复历史。
+4. 用户看到“第二步：行动证据”，根据第一步写一句以“我是...”开头的话。
+5. 用户看到“第三步：未来身份”，根据希望成为的人再写一句以“我是...”开头的话。
+6. 用户保存三步记录。
+7. 用户之后可以在历史里回顾自己写过的证据。
+8. 如果登录 Supabase，同一个账号换手机后也能恢复历史。
 
 ## 4. Functional Requirements
 
 ### FR-1 Daily Action
 
-- App must show one small action at a time.
+- App must show one suggested small action at a time.
+- App must allow the user to select from quick actions or type their own real action.
 - Each action must be understandable without AI or software background.
-- Each action should be small enough to start within 5 to 15 minutes.
+- Each action should be small enough to start within 5 to 10 minutes.
 
 Acceptance criteria:
 - Page shows a first-step card.
 - Action title and detail are visible.
+- User can choose a quick action or type a custom action.
 - User can check completion.
 
 ### FR-2 Identity Evidence
 
 - App must provide a second-step area for writing an “我是...” sentence.
+- The second-step sentence should be based on the first-step action.
 - App must save the sentence locally while the user types.
 - App must keep multiple evidence entries, including multiple entries on the same day.
 
@@ -45,6 +49,17 @@ Acceptance criteria:
 - User can type evidence.
 - Evidence appears in history.
 - Two different saved sentences from the same day both appear in history.
+
+### FR-2B Future Identity
+
+- App must provide a third-step area for writing an “我是...” future identity sentence.
+- The third-step sentence should be based on who the user hopes to become.
+- The saved history entry should include the first-step action, second-step evidence, and third-step future identity.
+
+Acceptance criteria:
+- User can type a future identity sentence.
+- The future identity appears in history with the same saved entry.
+- Saving and moving to the next action clears the third-step input.
 
 ### FR-3 Cloud Sync
 
@@ -104,7 +119,7 @@ Acceptance criteria:
 
 ## 5. Non-Functional Requirements
 
-- Simplicity: the main workflow must stay two steps.
+- Simplicity: the main workflow must stay three clear steps.
 - Comfort: visual design should be calm and readable on mobile.
 - Safety: no illegal wealth advice, no gambling, no tax evasion, no fraud, no secret keys in public files.
 - Privacy: cloud records must be separated by Supabase user ID and protected by RLS.
