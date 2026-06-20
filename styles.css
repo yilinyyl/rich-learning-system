@@ -1,18 +1,18 @@
 :root {
-  --ink: #1f3134;
-  --muted: #607579;
-  --paper: #f2fbfa;
+  --ink: #183027;
+  --muted: #64746b;
+  --paper: #f3f8f1;
   --panel: #ffffff;
-  --line: #d6e8e7;
-  --green: #2f8f86;
-  --blue: #3c8fb6;
-  --purple: #4aa8a1;
-  --violet: #8a7edb;
-  --rose: #ca7ca0;
-  --soft-blue: #edf8ff;
-  --soft-purple: #eaf8f6;
-  --soft-pink: #fff5fa;
-  --shadow: 0 16px 40px rgba(40, 94, 94, 0.1);
+  --line: #d8e5d5;
+  --green: #1f6f4a;
+  --blue: #2f7f68;
+  --purple: #285c43;
+  --violet: #6d8f73;
+  --rose: #b77a6a;
+  --soft-blue: #edf7f1;
+  --soft-purple: #e8f3ea;
+  --soft-pink: #fbf4ed;
+  --shadow: 0 16px 40px rgba(24, 74, 50, 0.1);
 }
 
 * {
@@ -23,7 +23,7 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    linear-gradient(180deg, #fbfffe 0%, var(--paper) 46%, #edf7ff 100%);
+    linear-gradient(180deg, #fbfdf9 0%, var(--paper) 46%, #edf6ee 100%);
   color: var(--ink);
   font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
 }
@@ -90,7 +90,7 @@ h2 {
   align-items: center;
   margin-bottom: 8px;
   padding: 5px 9px;
-  border: 1px solid #cce9e7;
+  border: 1px solid #cfe2cf;
   border-radius: 999px;
   background: var(--soft-purple);
   color: var(--purple);
@@ -111,7 +111,7 @@ h2 {
 
 .session-two {
   padding-top: 12px;
-  border-top: 1px solid rgba(74, 168, 161, 0.18);
+  border-top: 1px solid rgba(31, 111, 74, 0.18);
 }
 
 .card,
@@ -138,12 +138,12 @@ h2 {
 
 .step-one {
   background: var(--soft-blue);
-  border-color: #cfe9f7;
+  border-color: #cfe3d4;
 }
 
 .step-two {
   background: var(--soft-purple);
-  border-color: #cce9e7;
+  border-color: #c8dfcd;
 }
 
 .step-topline {
@@ -184,7 +184,7 @@ h2 {
   gap: 12px;
   margin-top: 22px;
   padding: 14px;
-  border: 1px solid #cce9e7;
+  border: 1px solid #c8dfcd;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.72);
   font-weight: 800;
@@ -223,7 +223,7 @@ textarea {
 
 textarea:focus,
 .email-input:focus {
-  outline: 2px solid rgba(74, 168, 161, 0.24);
+  outline: 2px solid rgba(31, 111, 74, 0.22);
   border-color: var(--purple);
 }
 
@@ -237,7 +237,7 @@ button {
   padding: 14px 16px;
   cursor: pointer;
   font-weight: 800;
-  box-shadow: 0 8px 18px rgba(58, 133, 126, 0.18);
+  box-shadow: 0 8px 18px rgba(31, 111, 74, 0.18);
 }
 
 button:hover {
@@ -322,7 +322,7 @@ button:hover {
   font-weight: 800;
   list-style-position: outside;
   padding: 14px 15px;
-  background: rgba(247, 253, 252, 0.94);
+  background: rgba(248, 252, 247, 0.94);
 }
 
 .drawer[open] summary {
