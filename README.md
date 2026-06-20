@@ -19,6 +19,11 @@ C:\Users\Internet\Documents\rich!\index.html
 
 这个系统故意很简单，因为真正重要的是每天开始，而不是填很多表。
 
+## Engineering docs
+
+- `REQUIREMENTS.md`：记录用户、目标、功能需求、验收标准和边界。
+- `TEST_PLAN.md`：记录每次发布前应该检查的功能、云端同步、导入过滤和 PWA 更新。
+
 ## 手机 App
 
 项目已经包含 PWA 文件：`manifest.json`、`sw.js`、`icons/icon.svg`。
@@ -55,12 +60,16 @@ Updated for GitHub Pages.
 ```sql
 create table if not exists public.evidence_entries (
   user_id uuid not null references auth.users(id) on delete cascade,
+  id text not null,
   date text not null,
   text text not null,
   action text,
   updated_at timestamptz not null default now(),
-  primary key (user_id, date)
+  primary key (user_id, id)
 );
+
+create index if not exists evidence_entries_user_date_idx
+on public.evidence_entries (user_id, date desc, updated_at desc);
 
 alter table public.evidence_entries enable row level security;
 
@@ -79,6 +88,29 @@ on public.evidence_entries
 for update
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
+```
+
+如果你之前已经建过旧表，而且旧表是 `primary key (user_id, date)`，请先执行这个迁移，让云端可以保存同一天的多句证据：
+
+```sql
+alter table public.evidence_entries
+add column if not exists id text;
+
+update public.evidence_entries
+set id = date || '-' || extract(epoch from coalesce(updated_at, now()))::bigint
+where id is null;
+
+alter table public.evidence_entries
+alter column id set not null;
+
+alter table public.evidence_entries
+drop constraint if exists evidence_entries_pkey;
+
+alter table public.evidence_entries
+add constraint evidence_entries_pkey primary key (user_id, id);
+
+create index if not exists evidence_entries_user_date_idx
+on public.evidence_entries (user_id, date desc, updated_at desc);
 ```
 
 5. 在 Supabase `Project Settings` -> `API` 复制 Project URL/API URL 和 anon public key。

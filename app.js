@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-20.1";
+const APP_VERSION = "2026-06-20.2";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -1274,10 +1274,12 @@ async function loadCloudHistory() {
   if (!supabaseClient || !currentUser) return;
 
   setCloudStatus("正在读取云端历史...");
+  const localHistory = Array.isArray(state.history) ? state.history : [];
   const { data, error } = await supabaseClient
     .from("evidence_entries")
-    .select("date,text,action,updated_at")
+    .select("*")
     .order("date", { ascending: false })
+    .order("updated_at", { ascending: false })
     .limit(90);
 
   if (error) {
@@ -1285,13 +1287,24 @@ async function loadCloudHistory() {
     return;
   }
 
-  state.history = (data || []).map((entry) => ({
-    id: `${entry.date}-${new Date(entry.updated_at || Date.now()).getTime()}`,
+  const cloudHistory = (data || []).map((entry) => ({
+    id: entry.id || `${entry.date}-${new Date(entry.updated_at || Date.now()).getTime()}`,
     date: entry.date,
     text: entry.text,
     action: entry.action,
     updatedAt: entry.updated_at
   }));
+  const merged = new Map();
+  [...cloudHistory, ...localHistory].forEach((entry) => {
+    if (!entry || !entry.id || !String(entry.text || "").trim()) return;
+    const existing = merged.get(entry.id);
+    if (!existing || new Date(entry.updatedAt || 0) >= new Date(existing.updatedAt || 0)) {
+      merged.set(entry.id, entry);
+    }
+  });
+  state.history = Array.from(merged.values())
+    .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
+    .slice(0, 90);
 
   const today = state.history.find((entry) => entry.date === todayKey());
   if (today && !String(state.evidence || "").trim()) {
@@ -1301,15 +1314,46 @@ async function loadCloudHistory() {
   saveState();
   render();
   setCloudStatus(`已连接云端：${currentUser.email}。`);
+  queueCloudSave();
 }
 
 function queueCloudSave() {
   if (!supabaseClient || !currentUser) return;
   clearTimeout(cloudSaveTimer);
-  cloudSaveTimer = setTimeout(syncTodayEvidence, 650);
+  cloudSaveTimer = setTimeout(syncRecentEvidence, 650);
 }
 
-async function syncTodayEvidence() {
+function oldCloudSchemaError(error) {
+  return /column.*id|schema cache|on conflict|unique|constraint|evidence_entries_pkey/i.test(String(error?.message || ""));
+}
+
+async function syncRecentEvidence() {
+  const history = Array.isArray(state.history) ? state.history : [];
+  const payloads = history
+    .filter((entry) => entry?.id && String(entry.text || "").trim())
+    .slice(0, 90)
+    .map((entry) => ({
+      user_id: currentUser.id,
+      id: entry.id,
+      date: entry.date || todayKey(),
+      text: String(entry.text || "").trim(),
+      action: entry.action || "行动证据",
+      updated_at: entry.updatedAt || new Date().toISOString()
+    }));
+
+  if (!supabaseClient || !currentUser || !payloads.length) return;
+
+  const { error } = await supabaseClient.from("evidence_entries").upsert(payloads, { onConflict: "user_id,id" });
+
+  if (error && oldCloudSchemaError(error)) {
+    await syncTodayEvidenceLegacy();
+    return;
+  }
+
+  setCloudStatus(error ? `云端保存失败：${error.message}` : `已保存到云端：${currentUser.email}。`);
+}
+
+async function syncTodayEvidenceLegacy() {
   const today = todayKey();
   const todayEntries = (Array.isArray(state.history) ? state.history : [])
     .filter((entry) => entry.date === today && String(entry.text || "").trim())
@@ -1330,7 +1374,11 @@ async function syncTodayEvidence() {
     { onConflict: "user_id,date" }
   );
 
-  setCloudStatus(error ? `云端保存失败：${error.message}` : `已保存到云端：${currentUser.email}。`);
+  setCloudStatus(
+    error
+      ? `云端保存失败：${error.message}`
+      : "已用旧云端表结构保存。若要每句独立同步，请按 README 执行 evidence_entries 迁移 SQL。"
+  );
 }
 
 function bindPwaInstall() {
