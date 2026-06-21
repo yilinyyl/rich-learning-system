@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-21.1";
+const APP_VERSION = "2026-06-21.2";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -1059,11 +1059,9 @@ function renderHistory() {
     const meta = document.createElement("span");
     meta.textContent = `${readableDate(entry.date)} · ${entry.action || "行动证据"}`;
     item.append(meta);
-    historyIdentityLines(entry.text).forEach((line) => {
-      const lineNode = document.createElement("p");
-      lineNode.textContent = line;
-      item.append(lineNode);
-    });
+    const lineNode = document.createElement("p");
+    lineNode.textContent = historyIdentityLine(entry.text);
+    item.append(lineNode);
     historyRoot.append(item);
   });
 }
@@ -1074,20 +1072,19 @@ function latestHistoryDates(history, limit) {
     .slice(0, limit);
 }
 
-function historyIdentityLines(text) {
+function historyIdentityLine(text) {
   const value = String(text || "").trim();
   const secondStep = value.match(/第二步：([\s\S]*?)(?:\n\n第三步：|$)/);
   const thirdStep = value.match(/第三步：([\s\S]*)$/);
-  const lines = [];
 
-  if (secondStep?.[1]?.trim()) {
-    lines.push(secondStep[1].trim());
-  }
   if (thirdStep?.[1]?.trim()) {
-    lines.push(thirdStep[1].trim());
+    return thirdStep[1].trim();
+  }
+  if (secondStep?.[1]?.trim()) {
+    return secondStep[1].trim();
   }
 
-  return lines.length ? lines : [value];
+  return value;
 }
 
 function bindEvents() {

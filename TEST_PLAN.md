@@ -36,7 +36,7 @@ Expected result:
 ### TC-2 First Step Selection and Completion
 
 Steps:
-1. Select one quick action related to wealth growth, such as money awareness, high-value services, AI/business learning, reusable systems, or real customer needs.
+1. Select one quick action related to inner wealth growth, such as manifestation visualization, abundance evidence, gratitude for money, a calmer body, a clearer home space, or awareness learning.
 2. Check “我完成了第一步”.
 3. Refresh the page.
 
@@ -44,6 +44,7 @@ Expected result:
 - The selected/custom action is saved locally.
 - The checkbox state is saved locally.
 - The quick action is concrete enough to start within 5 to 10 minutes.
+- The quick action does not feel purely practical or overly business-like.
 
 ### TC-3 Evidence and Future Identity Save
 
@@ -59,7 +60,7 @@ Expected result:
 - The saved history entry stores first step, second step, and third step.
 - Both entries appear in history.
 - The second entry does not overwrite the first local history entry.
-- The visible history shows the “我是...” identity sentences without displaying the full first-step action block.
+- The visible history shows one “我是...” identity sentence per entry without displaying the full first-step action block.
 
 ### TC-3B Three-Day History Display
 
