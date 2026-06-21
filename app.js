@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-21.3";
+const APP_VERSION = "2026-06-21.4";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -970,7 +970,7 @@ function saveEvidenceHistory() {
   }
 
   state.currentHistoryId = id;
-  state.history = history.slice(0, 90);
+  state.history = dedupeHistoryEntries(history).slice(0, 90);
   queueCloudSave();
 }
 
@@ -1067,7 +1067,7 @@ function renderHistory() {
   }
 
   const visibleDates = latestHistoryDates(history, 3);
-  const visibleHistory = history.filter((entry) => visibleDates.includes(entry.date));
+  const visibleHistory = dedupeHistoryEntries(history.filter((entry) => visibleDates.includes(entry.date)));
 
   visibleHistory.forEach((entry) => {
     const item = document.createElement("div");
@@ -1101,6 +1101,26 @@ function historyIdentityLine(text) {
   }
 
   return cleanIdentityInput(value);
+}
+
+function identityKey(text) {
+  return historyIdentityLine(text)
+    .replace(/[，。,.!?！？、；;：“”"'\s]/g, "")
+    .toLowerCase();
+}
+
+function dedupeHistoryEntries(history) {
+  const seen = new Set();
+  return [...history]
+    .filter((entry) => entry && String(entry.text || "").trim())
+    .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
+    .filter((entry) => {
+      const key = identityKey(entry.text);
+      const fallbackKey = key || entry.id || `${entry.date}-${entry.text}`;
+      if (seen.has(fallbackKey)) return false;
+      seen.add(fallbackKey);
+      return true;
+    });
 }
 
 function bindEvents() {
@@ -1417,9 +1437,7 @@ async function loadCloudHistory() {
       merged.set(entry.id, entry);
     }
   });
-  state.history = Array.from(merged.values())
-    .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
-    .slice(0, 90);
+  state.history = dedupeHistoryEntries(Array.from(merged.values())).slice(0, 90);
 
   const today = state.history.find((entry) => entry.date === todayKey());
   if (today && !String(state.evidence || "").trim()) {

@@ -48,6 +48,7 @@ Acceptance criteria:
 - App must keep multiple evidence entries, including multiple entries on the same day.
 - History display should stay lightweight by showing only the latest 3 calendar dates.
 - History display should show one identity sentence per entry, not the full first-step action block.
+- If the same identity sentence appears in multiple records, the history display should show it only once.
 
 Acceptance criteria:
 - User can type evidence.
@@ -55,6 +56,7 @@ Acceptance criteria:
 - Two different saved sentences from the same day both appear in history.
 - History does not show more than the latest 3 dates.
 - Each visible history entry is compact and does not expand into multiple identity lines.
+- Repeated “我是...” sentences are deduplicated across visible history.
 
 ### FR-2B Future Identity
 

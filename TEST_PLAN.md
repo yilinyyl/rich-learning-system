@@ -72,6 +72,7 @@ Expected result:
 - The visible history only shows entries from the latest 3 calendar dates.
 - Older entries are not shown in the history section.
 - Multiple entries from the same visible date can still appear separately.
+- The same “我是...” sentence does not appear repeatedly across history cards.
 
 ### TC-4 Cloud Login
 
