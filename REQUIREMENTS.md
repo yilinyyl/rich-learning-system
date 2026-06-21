@@ -75,12 +75,15 @@ Acceptance criteria:
 - App should save each evidence sentence as an independent cloud record when the Supabase table has the newer `id` column.
 - App should not expose service role keys or database passwords.
 - App should degrade gracefully if Supabase is not configured or still uses the old one-row-per-day schema.
+- Refreshing or loading cloud history must not create new evidence rows.
+- The same “我是...” identity sentence should exist only once per user in app-managed cloud history.
 
 Acceptance criteria:
 - Logged-in user can save evidence.
 - Same account can read cloud history on another device.
 - Different accounts only see their own records when RLS is enabled.
 - If the cloud schema is old, the app shows a migration hint instead of silently failing.
+- Repeated refreshes do not increase the number of rows in `evidence_entries`.
 
 ### FR-4 Rich Life Imagination
 

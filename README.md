@@ -168,6 +168,7 @@ alter table public.evidence_entries enable row level security;
 drop policy if exists "Users can read own evidence" on public.evidence_entries;
 drop policy if exists "Users can insert own evidence" on public.evidence_entries;
 drop policy if exists "Users can update own evidence" on public.evidence_entries;
+drop policy if exists "Users can delete own evidence" on public.evidence_entries;
 
 create policy "Users can read own evidence"
 on public.evidence_entries
@@ -184,6 +185,11 @@ on public.evidence_entries
 for update
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
+
+create policy "Users can delete own evidence"
+on public.evidence_entries
+for delete
+using (auth.uid() = user_id);
 ```
 
 ### 3. 如果你以前用过旧表结构

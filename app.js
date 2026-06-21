@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-21.5";
+const APP_VERSION = "2026-06-21.6";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -785,6 +785,7 @@ function buildEvidenceRecordText() {
   const evidence = cleanIdentityInput(state.evidence);
   const futureIdentity = cleanIdentityInput(state.futureIdentity);
   const parts = [];
+  if (!evidence && !futureIdentity) return "";
   if (actionText) parts.push(`第一步：${actionText}`);
   if (evidence) parts.push(`第二步：${evidence}`);
   if (futureIdentity) parts.push(`第三步：${futureIdentity}`);
@@ -814,6 +815,7 @@ function restoreDraftFromHistoryEntry(entry) {
   const first = text.match(/第一步：([\s\S]*?)(?:\n\n第二步：|\n\n第三步：|$)/);
   const second = text.match(/第二步：([\s\S]*?)(?:\n\n第三步：|$)/);
   const third = text.match(/第三步：([\s\S]*)$/);
+  state.currentHistoryId = entry.id || state.currentHistoryId || null;
   state.customAction = first ? first[1].trim() : entry.action || "";
   state.evidence = second ? cleanIdentityInput(second[1]) : cleanIdentityInput(text);
   state.futureIdentity = third ? cleanIdentityInput(third[1]) : "";
@@ -1430,6 +1432,7 @@ async function loadCloudHistory() {
     action: entry.action,
     updatedAt: entry.updated_at
   }));
+  cleanupDuplicateCloudRows(data || []).catch(() => {});
   const merged = new Map();
   [...cloudHistory, ...localHistory].forEach((entry) => {
     if (!entry || !entry.id || !String(entry.text || "").trim()) return;
@@ -1448,7 +1451,37 @@ async function loadCloudHistory() {
   saveState();
   render();
   setCloudStatus(`已连接云端：${currentUser.email}。`);
-  queueCloudSave();
+}
+
+async function cleanupDuplicateCloudRows(rows) {
+  if (!supabaseClient || !currentUser) return;
+  const sorted = [...rows]
+    .filter((entry) => entry?.id && String(entry.text || "").trim())
+    .sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
+  const seen = new Set();
+  const duplicateIds = [];
+
+  sorted.forEach((entry) => {
+    const key = identityKey(entry.text);
+    if (!key) return;
+    if (seen.has(key)) {
+      duplicateIds.push(entry.id);
+    } else {
+      seen.add(key);
+    }
+  });
+
+  if (!duplicateIds.length) return;
+
+  const { error } = await supabaseClient
+    .from("evidence_entries")
+    .delete()
+    .eq("user_id", currentUser.id)
+    .in("id", duplicateIds);
+
+  if (error) {
+    setCloudStatus("已在 app 里隐藏重复句子；如果 Supabase 里仍看到重复 row，请在 RLS 加上 delete policy。");
+  }
 }
 
 function queueCloudSave() {
@@ -1463,8 +1496,8 @@ function oldCloudSchemaError(error) {
 
 async function syncRecentEvidence() {
   const history = Array.isArray(state.history) ? state.history : [];
-  const payloads = history
-    .filter((entry) => entry?.id && String(entry.text || "").trim())
+  const payloads = dedupeHistoryEntries(history)
+    .filter((entry) => entry?.id && identityKey(entry.text))
     .slice(0, 90)
     .map((entry) => ({
       user_id: currentUser.id,

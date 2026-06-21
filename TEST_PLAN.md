@@ -122,6 +122,22 @@ Expected result:
 If this fails:
 - Run the migration SQL in `README.md`.
 
+### TC-6B Refresh Does Not Create Cloud Duplicates
+
+Precondition:
+- User is logged in.
+- Supabase table uses the newer `id` column.
+
+Steps:
+1. Save one “我是...” sentence.
+2. Check Supabase `evidence_entries` row count for that user.
+3. Refresh the app 3 times.
+4. Check Supabase `evidence_entries` row count again.
+
+Expected result:
+- Refreshing does not add new rows.
+- The same “我是...” sentence appears only once in `evidence_entries`.
+
 ### TC-7 Old Cloud Schema Fallback
 
 Precondition:
