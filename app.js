@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-21.6";
+const APP_VERSION = "2026-06-21.7";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
