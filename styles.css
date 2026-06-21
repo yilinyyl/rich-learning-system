@@ -11,6 +11,8 @@
   --violet: #b6d7a8;
   --rose: #f0b7a6;
   --gold: #ead8a8;
+  --cream: #f8fff3;
+  --tag-bg: rgba(7, 24, 16, 0.66);
   --soft-blue: rgba(50, 86, 67, 0.76);
   --soft-purple: rgba(61, 79, 67, 0.82);
   --soft-pink: rgba(80, 60, 55, 0.72);
@@ -59,18 +61,55 @@ input {
 }
 
 .header {
+  position: relative;
+  overflow: hidden;
   margin-bottom: 20px;
-  padding: 18px 18px 16px;
+  padding: 18px 88px 16px 18px;
   border: 1px solid rgba(234, 216, 168, 0.18);
   border-radius: 8px;
   background: rgba(21, 43, 31, 0.72);
   box-shadow: var(--shadow);
 }
 
+.header::before,
+.header::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.header::before {
+  right: 14px;
+  bottom: 12px;
+  width: 58px;
+  height: 32px;
+  border-radius: 999px 999px 999px 24px;
+  background:
+    radial-gradient(ellipse at 24% 58%, rgba(182, 215, 168, 0.9) 0 22%, transparent 24%),
+    radial-gradient(ellipse at 52% 38%, rgba(121, 201, 154, 0.9) 0 20%, transparent 22%),
+    radial-gradient(ellipse at 78% 62%, rgba(140, 207, 189, 0.86) 0 18%, transparent 20%);
+  transform: rotate(-12deg);
+  opacity: 0.92;
+}
+
+.header::after {
+  right: 20px;
+  top: 12px;
+  width: 42px;
+  height: 42px;
+  background:
+    radial-gradient(circle at 50% 50%, #fff7cf 0 10%, transparent 11%),
+    radial-gradient(ellipse at 50% 18%, rgba(240, 183, 166, 0.92) 0 16%, transparent 18%),
+    radial-gradient(ellipse at 82% 50%, rgba(197, 167, 255, 0.9) 0 16%, transparent 18%),
+    radial-gradient(ellipse at 50% 82%, rgba(240, 183, 166, 0.92) 0 16%, transparent 18%),
+    radial-gradient(ellipse at 18% 50%, rgba(197, 167, 255, 0.9) 0 16%, transparent 18%);
+  opacity: 0.95;
+}
+
 .header p,
 .label {
   margin: 0 0 8px;
-  color: var(--gold);
+  color: var(--cream);
   font-size: 13px;
   font-weight: 800;
 }
@@ -113,10 +152,10 @@ h2 {
   align-items: center;
   margin-bottom: 8px;
   padding: 5px 9px;
-  border: 1px solid rgba(234, 216, 168, 0.22);
+  border: 1px solid rgba(167, 234, 214, 0.42);
   border-radius: 999px;
-  background: rgba(234, 216, 168, 0.1);
-  color: var(--gold);
+  background: var(--tag-bg);
+  color: var(--cream);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0;
@@ -147,12 +186,31 @@ h2 {
 }
 
 .steps-card {
+  position: relative;
+  overflow: hidden;
   display: grid;
   gap: 12px;
   background: rgba(18, 37, 27, 0.76);
 }
 
+.steps-card::before {
+  content: "";
+  position: absolute;
+  right: 15px;
+  top: 13px;
+  width: 74px;
+  height: 54px;
+  pointer-events: none;
+  opacity: 0.36;
+  background:
+    radial-gradient(ellipse at 18% 55%, rgba(182, 215, 168, 0.95) 0 16%, transparent 18%),
+    radial-gradient(ellipse at 44% 32%, rgba(140, 207, 189, 0.9) 0 15%, transparent 17%),
+    radial-gradient(ellipse at 70% 58%, rgba(197, 167, 255, 0.86) 0 14%, transparent 16%),
+    linear-gradient(105deg, transparent 0 45%, rgba(234, 216, 168, 0.7) 46% 50%, transparent 51% 100%);
+}
+
 .step-card {
+  position: relative;
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -190,8 +248,8 @@ h2 {
   flex: 0 0 auto;
   padding: 5px 8px;
   border-radius: 999px;
-  background: rgba(234, 216, 168, 0.1);
-  color: #dcd4b5;
+  background: var(--tag-bg);
+  color: var(--cream);
   font-size: 12px;
   font-weight: 900;
 }
@@ -393,12 +451,27 @@ button:hover {
 }
 
 .drawer summary {
+  position: relative;
   cursor: pointer;
   color: var(--ink);
   font-weight: 800;
   list-style-position: outside;
-  padding: 14px 15px;
+  padding: 14px 48px 14px 15px;
   background: rgba(34, 61, 45, 0.84);
+}
+
+.drawer summary::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 26px;
+  height: 16px;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 24% 55%, rgba(182, 215, 168, 0.9) 0 28%, transparent 30%),
+    radial-gradient(ellipse at 70% 45%, rgba(140, 207, 189, 0.9) 0 24%, transparent 26%);
+  transform: translateY(-50%) rotate(-10deg);
 }
 
 .drawer[open] summary {
@@ -515,6 +588,21 @@ button:hover {
   .app {
     width: min(100% - 18px, 480px);
     padding-top: 18px;
+  }
+
+  .header {
+    padding-right: 66px;
+  }
+
+  .header::after {
+    right: 15px;
+    width: 34px;
+    height: 34px;
+  }
+
+  .header::before {
+    right: 9px;
+    width: 48px;
   }
 
   h1 {
