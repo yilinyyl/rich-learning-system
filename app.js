@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-21.4";
+const APP_VERSION = "2026-06-21.5";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -794,6 +794,7 @@ function buildEvidenceRecordText() {
 function cleanIdentityInput(text) {
   const lines = String(text || "")
     .split(/\n+/)
+    .flatMap((line) => line.split(/(?=我是)/))
     .map((line) => line.replace(/\s+/g, " ").trim())
     .filter(Boolean);
   const seen = new Set();
