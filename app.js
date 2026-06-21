@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-21.2";
+const APP_VERSION = "2026-06-21.3";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -782,13 +782,29 @@ function selectedActionText() {
 
 function buildEvidenceRecordText() {
   const actionText = selectedActionText();
-  const evidence = String(state.evidence || "").trim();
-  const futureIdentity = String(state.futureIdentity || "").trim();
+  const evidence = cleanIdentityInput(state.evidence);
+  const futureIdentity = cleanIdentityInput(state.futureIdentity);
   const parts = [];
   if (actionText) parts.push(`第一步：${actionText}`);
   if (evidence) parts.push(`第二步：${evidence}`);
   if (futureIdentity) parts.push(`第三步：${futureIdentity}`);
   return parts.join("\n\n");
+}
+
+function cleanIdentityInput(text) {
+  const lines = String(text || "")
+    .split(/\n+/)
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  const seen = new Set();
+  const uniqueLines = lines.filter((line) => {
+    const key = line.replace(/[，。,.!?！？\s]/g, "");
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const identityLine = uniqueLines.find((line) => line.startsWith("我是")) || uniqueLines[0] || "";
+  return identityLine.trim();
 }
 
 function restoreDraftFromHistoryEntry(entry) {
@@ -798,8 +814,8 @@ function restoreDraftFromHistoryEntry(entry) {
   const second = text.match(/第二步：([\s\S]*?)(?:\n\n第三步：|$)/);
   const third = text.match(/第三步：([\s\S]*)$/);
   state.customAction = first ? first[1].trim() : entry.action || "";
-  state.evidence = second ? second[1].trim() : text.trim();
-  state.futureIdentity = third ? third[1].trim() : "";
+  state.evidence = second ? cleanIdentityInput(second[1]) : cleanIdentityInput(text);
+  state.futureIdentity = third ? cleanIdentityInput(third[1]) : "";
 }
 
 function todayKey() {
@@ -1078,13 +1094,13 @@ function historyIdentityLine(text) {
   const thirdStep = value.match(/第三步：([\s\S]*)$/);
 
   if (thirdStep?.[1]?.trim()) {
-    return thirdStep[1].trim();
+    return cleanIdentityInput(thirdStep[1]);
   }
   if (secondStep?.[1]?.trim()) {
-    return secondStep[1].trim();
+    return cleanIdentityInput(secondStep[1]);
   }
 
-  return value;
+  return cleanIdentityInput(value);
 }
 
 function bindEvents() {
