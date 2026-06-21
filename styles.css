@@ -147,8 +147,8 @@ h2 {
 }
 
 .step-three {
-  background: var(--soft-pink);
-  border-color: #ead7c8;
+  background: var(--soft-purple);
+  border-color: #c8dfcd;
 }
 
 .step-topline {
@@ -415,6 +415,10 @@ button:hover {
   color: var(--muted);
   font-size: 13px;
   font-weight: 800;
+}
+
+.history-item p {
+  margin: 5px 0 0;
 }
 
 .example,

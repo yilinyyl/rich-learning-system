@@ -36,13 +36,14 @@ Expected result:
 ### TC-2 First Step Selection and Completion
 
 Steps:
-1. Select one quick action or type a custom action.
+1. Select one quick action related to wealth growth, such as money awareness, high-value services, AI/business learning, reusable systems, or real customer needs.
 2. Check “我完成了第一步”.
 3. Refresh the page.
 
 Expected result:
 - The selected/custom action is saved locally.
 - The checkbox state is saved locally.
+- The quick action is concrete enough to start within 5 to 10 minutes.
 
 ### TC-3 Evidence and Future Identity Save
 
@@ -55,9 +56,21 @@ Steps:
 6. Type a second entry.
 
 Expected result:
-- The saved history entry includes first step, second step, and third step.
+- The saved history entry stores first step, second step, and third step.
 - Both entries appear in history.
 - The second entry does not overwrite the first local history entry.
+- The visible history shows the “我是...” identity sentences without displaying the full first-step action block.
+
+### TC-3B Three-Day History Display
+
+Steps:
+1. Create or restore history entries across at least 4 different dates.
+2. Open the history section.
+
+Expected result:
+- The visible history only shows entries from the latest 3 calendar dates.
+- Older entries are not shown in the history section.
+- Multiple entries from the same visible date can still appear separately.
 
 ### TC-4 Cloud Login
 

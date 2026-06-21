@@ -31,12 +31,14 @@
 - App must allow the user to select from quick actions or type their own real action.
 - Each action must be understandable without AI or software background.
 - Each action should be small enough to start within 5 to 10 minutes.
+- Quick actions should be specific to wealth growth, such as money awareness, high-value services, AI/business learning, reusable systems, or real customer needs.
 
 Acceptance criteria:
 - Page shows a first-step card.
 - Action title and detail are visible.
 - User can choose a quick action or type a custom action.
 - User can check completion.
+- Quick action choices are concrete enough that the user knows exactly what to do in 5 to 10 minutes.
 
 ### FR-2 Identity Evidence
 
@@ -44,11 +46,14 @@ Acceptance criteria:
 - The second-step sentence should be based on the first-step action.
 - App must save the sentence locally while the user types.
 - App must keep multiple evidence entries, including multiple entries on the same day.
+- History display should stay lightweight by showing only the latest 3 calendar dates.
+- History display should show the identity sentences, not the full first-step action block.
 
 Acceptance criteria:
 - User can type evidence.
 - Evidence appears in history.
 - Two different saved sentences from the same day both appear in history.
+- History does not show more than the latest 3 dates.
 
 ### FR-2B Future Identity
 

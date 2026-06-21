@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-20.3";
+const APP_VERSION = "2026-06-21.1";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -1050,15 +1050,44 @@ function renderHistory() {
     return;
   }
 
-  history.slice(0, 14).forEach((entry) => {
+  const visibleDates = latestHistoryDates(history, 3);
+  const visibleHistory = history.filter((entry) => visibleDates.includes(entry.date));
+
+  visibleHistory.forEach((entry) => {
     const item = document.createElement("div");
     item.className = "history-item";
     const meta = document.createElement("span");
     meta.textContent = `${readableDate(entry.date)} · ${entry.action || "行动证据"}`;
     item.append(meta);
-    item.append(document.createTextNode(entry.text));
+    historyIdentityLines(entry.text).forEach((line) => {
+      const lineNode = document.createElement("p");
+      lineNode.textContent = line;
+      item.append(lineNode);
+    });
     historyRoot.append(item);
   });
+}
+
+function latestHistoryDates(history, limit) {
+  return Array.from(new Set(history.map((entry) => entry?.date).filter(Boolean)))
+    .sort((a, b) => b.localeCompare(a))
+    .slice(0, limit);
+}
+
+function historyIdentityLines(text) {
+  const value = String(text || "").trim();
+  const secondStep = value.match(/第二步：([\s\S]*?)(?:\n\n第三步：|$)/);
+  const thirdStep = value.match(/第三步：([\s\S]*)$/);
+  const lines = [];
+
+  if (secondStep?.[1]?.trim()) {
+    lines.push(secondStep[1].trim());
+  }
+  if (thirdStep?.[1]?.trim()) {
+    lines.push(thirdStep[1].trim());
+  }
+
+  return lines.length ? lines : [value];
 }
 
 function bindEvents() {
