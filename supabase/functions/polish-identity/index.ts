@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 type PolishRequest = {
-  target?: "evidence" | "future";
+  target?: "action" | "evidence" | "future";
   sentence?: string;
   action?: string;
 };
@@ -70,13 +70,13 @@ function extractIdentityLines(text: string) {
     .filter((line) => line.startsWith("我是"));
 }
 
-function normalizeSuggestions(items: unknown[], original: string) {
+function normalizeSuggestions(items: unknown[], original: string, target: "action" | "evidence" | "future") {
   const seen = new Set<string>();
 
   return items
     .map((item) => String(item || "").replace(/\s+/g, " ").trim())
-    .filter((item) => item.startsWith("我是"))
-    .filter((item) => item.length >= 8 && item.length <= 180)
+    .filter((item) => (target === "action" ? !item.startsWith("我是") : item.startsWith("我是")))
+    .filter((item) => item.length >= (target === "action" ? 6 : 8) && item.length <= 180)
     .filter((item) => {
       const key = item.replace(/[，。,.!?！？\s]/g, "");
       if (!key || key === original.replace(/[，。,.!?！？\s]/g, "") || seen.has(key)) return false;
@@ -124,23 +124,34 @@ Deno.serve(async (req) => {
     const body = (await req.json().catch(() => ({}))) as PolishRequest;
     const sentence = String(body.sentence || "").replace(/\s+/g, " ").trim();
     const action = String(body.action || "").replace(/\s+/g, " ").trim();
-    const target = body.target === "future" ? "future" : "evidence";
+    const target = body.target === "action" ? "action" : body.target === "future" ? "future" : "evidence";
 
-    if (!sentence.startsWith("我是") || sentence.length > 180) {
+    if (!sentence || sentence.length > 180) {
+      return jsonResponse({ error: "Please send one short sentence." });
+    }
+
+    if (target !== "action" && !sentence.startsWith("我是")) {
       return jsonResponse({ error: "Please send one short sentence starting with 我是." });
     }
 
     const task =
-      target === "future"
+      target === "action"
+        ? "把这句第一步行动优化成更清楚、更具体、更容易执行的中文句子。"
+        : target === "future"
         ? "把这句未来身份显化句优化成更自然、更贴近原意、更容易想象的中文句子。"
         : "把这句行动证据优化成更自然、更贴近原意、更具体的中文句子。";
 
+    const formatRule =
+      target === "action"
+        ? "- 第一结果必须是行动句，不要以“我是”开头。\n- 每一句都要说清楚用户刚刚做了什么，适合放在“第一步”。"
+        : "- 每一句都必须以“我是”开头。";
+
     const prompt = `
-你是一个中文写作助手，任务是优化用户写下的“我是...”句子。
+你是一个中文写作助手，任务是优化用户写下的一句成长记录。
 
 规则：
 - 必须保留用户原意，不要换主题，不要硬套模板。
-- 每一句都必须以“我是”开头。
+${formatRule}
 - 不要提到 AI、模型、prompt、系统、资料来源。
 - 不要夸张承诺，不要写玄学保证，不要写“一定会发财”。
 - 语气：温柔、清楚、有力量、适合个人成长和显化练习。
@@ -185,7 +196,7 @@ Deno.serve(async (req) => {
       rawSuggestions = extractIdentityLines(text);
     }
 
-    const suggestions = normalizeSuggestions(rawSuggestions, sentence);
+    const suggestions = normalizeSuggestions(rawSuggestions, sentence, target);
 
     if (!suggestions.length) {
       return jsonResponse({ error: "AI did not return usable suggestions." });

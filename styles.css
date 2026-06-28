@@ -602,6 +602,16 @@ button:hover {
   margin: 5px 0 0;
 }
 
+.history-part {
+  display: grid;
+  gap: 3px;
+}
+
+.history-part strong {
+  color: var(--cream);
+  font-size: 12px;
+}
+
 .history-delete {
   width: auto;
   margin-top: 10px;

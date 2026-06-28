@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-28.9";
+const APP_VERSION = "2026-06-28.10";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -732,6 +732,7 @@ async function fetchRichLifeInsights() {
 const state = loadState();
 state.evidencePolishLoading = false;
 state.futurePolishLoading = false;
+state.actionPolishLoading = false;
 
 function loadState() {
   try {
@@ -1081,7 +1082,20 @@ function renderActionHelper() {
     return;
   }
 
-  actionSuggestions(action).forEach((sentence) => {
+  const note = document.createElement("div");
+  note.className = "polish-hint";
+  note.textContent = state.actionPolishLoading
+    ? "AI 正在根据你写的第一步优化，不会自动保存。"
+    : state.actionPolishError || "优先使用 AI 优化第一步；如果云端 AI 暂时不可用，会显示本地备用建议。";
+  root.append(note);
+
+  if (state.actionPolishLoading) return;
+
+  const suggestions = Array.isArray(state.actionAiSuggestions) && state.actionAiSuggestions.length
+    ? state.actionAiSuggestions
+    : actionSuggestions(action);
+
+  suggestions.forEach((sentence) => {
     const item = document.createElement("button");
     item.className = "polish-option";
     item.type = "button";
@@ -1126,11 +1140,79 @@ function actionSuggestions(action) {
 function setActionText(sentence) {
   state.customAction = sentence;
   state.actionPolishOpen = false;
+  state.actionAiSuggestions = [];
+  state.actionPolishError = "";
   const customActionText = document.querySelector("#customActionText");
   if (customActionText) customActionText.value = sentence;
   saveState();
   renderActionHelper();
   renderActionChoices();
+}
+
+async function invokePolishFunction(body) {
+  if (!supabaseClient || !currentUser) {
+    throw new Error("AI 优化需要先登录云端。");
+  }
+
+  const { data: sessionData } = await supabaseClient.auth.getSession();
+  const accessToken = sessionData?.session?.access_token;
+  if (!accessToken) {
+    throw new Error("登录状态已过期，请先重新登录 Supabase。");
+  }
+
+  const { data, error } = await supabaseClient.functions.invoke("polish-identity", {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    },
+    body
+  });
+
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
+async function generateAiActionSuggestions() {
+  const action = String(state.customAction || "").replace(/\s+/g, " ").trim();
+  state.actionPolishOpen = true;
+  state.actionPolishError = "";
+  state.actionAiSuggestions = [];
+
+  if (!action) {
+    state.actionPolishError = "先写清楚你刚刚做了什么，我再帮你优化第一步。";
+    saveState();
+    renderActionHelper();
+    return;
+  }
+
+  state.actionPolishLoading = true;
+  saveState();
+  renderActionHelper();
+
+  try {
+    const data = await invokePolishFunction({
+      target: "action",
+      sentence: action,
+      action
+    });
+    const suggestions = Array.isArray(data?.suggestions)
+      ? data.suggestions.map((item) => String(item || "").replace(/\s+/g, " ").trim()).filter(Boolean).slice(0, 5)
+      : [];
+
+    if (!suggestions.length) {
+      throw new Error("AI 没有返回可用句子。");
+    }
+
+    state.actionAiSuggestions = suggestions;
+    state.actionPolishError = "";
+  } catch (error) {
+    state.actionPolishError = `AI 优化暂时不可用：${error.message || "请确认 Edge Function 和 OPENROUTER_API_KEY 已设置"}。下面先显示本地备用建议。`;
+    state.actionAiSuggestions = [];
+  } finally {
+    state.actionPolishLoading = false;
+    saveState();
+    renderActionHelper();
+  }
 }
 
 function identityTarget(target) {
@@ -1360,25 +1442,11 @@ async function generateAiIdentitySuggestions(target) {
   renderIdentityHelper(target);
 
   try {
-    const { data: sessionData } = await supabaseClient.auth.getSession();
-    const accessToken = sessionData?.session?.access_token;
-    if (!accessToken) {
-      throw new Error("登录状态已过期，请先重新登录 Supabase。");
-    }
-
-    const { data, error } = await supabaseClient.functions.invoke("polish-identity", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`
-      },
-      body: {
-        target,
-        sentence,
-        action: selectedActionText()
-      }
+    const data = await invokePolishFunction({
+      target,
+      sentence,
+      action: selectedActionText()
     });
-
-    if (error) throw error;
-    if (data?.error) throw new Error(data.error);
 
     const suggestions = Array.isArray(data?.suggestions)
       ? data.suggestions.map((item) => cleanIdentityInput(item)).filter(Boolean).slice(0, 5)
@@ -1421,11 +1489,19 @@ function renderHistory() {
     const item = document.createElement("div");
     item.className = "history-item";
     const meta = document.createElement("span");
-    meta.textContent = `${readableDate(entry.date)} · ${entry.action || "行动证据"}`;
+    meta.textContent = readableDate(entry.date);
     item.append(meta);
-    const lineNode = document.createElement("p");
-    lineNode.textContent = historyIdentityLine(entry.text);
-    item.append(lineNode);
+
+    historyEntryParts(entry).forEach((part) => {
+      if (!part.text) return;
+      const row = document.createElement("p");
+      row.className = "history-part";
+      const label = document.createElement("strong");
+      label.textContent = part.label;
+      row.append(label, document.createTextNode(part.text));
+      item.append(row);
+    });
+
     const deleteButton = document.createElement("button");
     deleteButton.className = "history-delete";
     deleteButton.type = "button";
@@ -1489,8 +1565,33 @@ function historyIdentityLine(text) {
   return cleanIdentityInput(value);
 }
 
+function historyEntryParts(entry) {
+  const value = String(entry?.text || "").trim();
+  const first = value.match(/第一步：([\s\S]*?)(?:\n\n第二步：|\n\n第三步：|$)/);
+  const second = value.match(/第二步：([\s\S]*?)(?:\n\n第三步：|$)/);
+  const third = value.match(/第三步：([\s\S]*)$/);
+
+  return [
+    {
+      label: "第一步：",
+      text: (first ? first[1] : entry?.action || "").trim()
+    },
+    {
+      label: "第二步：",
+      text: second ? cleanIdentityInput(second[1]) : ""
+    },
+    {
+      label: "第三步：",
+      text: third ? cleanIdentityInput(third[1]) : ""
+    }
+  ];
+}
+
 function identityKey(text) {
-  return historyIdentityLine(text)
+  const parts = historyEntryParts({ text });
+  return parts
+    .map((part) => part.text)
+    .join("|")
     .replace(/[，。,.!?！？、；;：“”"'\s]/g, "")
     .toLowerCase();
 }
@@ -1541,6 +1642,8 @@ function bindEvents() {
     customActionText.addEventListener("input", (event) => {
       state.customAction = event.target.value;
       state.actionPolishOpen = false;
+      state.actionAiSuggestions = [];
+      state.actionPolishError = "";
       saveState();
       renderActionHelper();
     });
@@ -1551,8 +1654,7 @@ function bindEvents() {
     actionPolishBtn.addEventListener("click", () => {
       state.actionPolishOpen = true;
       state.actionPolishSpin = Number(state.actionPolishSpin || 0) + 1;
-      saveState();
-      renderActionHelper();
+      generateAiActionSuggestions();
     });
   }
 
