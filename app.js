@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-28.4";
+const APP_VERSION = "2026-06-28.5";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -996,6 +996,7 @@ function render() {
   document.querySelector("#doneCheck").checked = Boolean(state.done);
   const customActionText = document.querySelector("#customActionText");
   if (customActionText) customActionText.value = state.customAction || "";
+  renderActionChoices();
   document.querySelector("#evidenceText").value = state.evidence || "";
   const futureIdentityText = document.querySelector("#futureIdentityText");
   if (futureIdentityText) futureIdentityText.value = state.futureIdentity || "";
@@ -1088,6 +1089,23 @@ function renderActionHelper() {
   });
 }
 
+function renderActionChoices() {
+  const selectedLabel = String(state.selectedActionLabel || "");
+  const suggestedActionBtn = document.querySelector("#suggestedActionBtn");
+  if (suggestedActionBtn) {
+    const isSelected = selectedLabel === "系统建议";
+    suggestedActionBtn.classList.toggle("is-selected", isSelected);
+    suggestedActionBtn.setAttribute("aria-pressed", String(isSelected));
+  }
+
+  document.querySelectorAll(".quick-action").forEach((button) => {
+    const label = button.textContent.trim();
+    const isSelected = selectedLabel === label;
+    button.classList.toggle("is-selected", isSelected);
+    button.setAttribute("aria-pressed", String(isSelected));
+  });
+}
+
 function actionSuggestions(action) {
   const cleaned = String(action || "")
     .replace(/\s+/g, " ")
@@ -1095,10 +1113,10 @@ function actionSuggestions(action) {
     .trim();
   const offset = Number(state.actionPolishSpin || 0);
   const suggestions = [
-    `我用 5-10 分钟完成了：${cleaned}。`,
-    `我把今天的成长落在一个具体行动上：${cleaned}。`,
-    `我认真做了一件能让我更会表达、更自由的小事：${cleaned}。`,
-    `我没有只停留在想法里，我刚刚实际做了：${cleaned}。`
+    `我刚刚做了：${cleaned}。`,
+    `我用 5-10 分钟真实完成了一件小事：${cleaned}。`,
+    `我把今天的状态落到一个具体行动上：${cleaned}。`,
+    `我没有只停留在想法里，我已经实际做了：${cleaned}。`
   ];
   return pickDailyItems(suggestions, 3, offset);
 }
@@ -1110,6 +1128,7 @@ function setActionText(sentence) {
   if (customActionText) customActionText.value = sentence;
   saveState();
   renderActionHelper();
+  renderActionChoices();
 }
 
 function identityTarget(target) {
@@ -1143,6 +1162,11 @@ function renderIdentityHelper(target) {
     return;
   }
 
+  const note = document.createElement("div");
+  note.className = "polish-hint";
+  note.textContent = "下面只根据你写的这一句来修顺和展开；不会保存，也不会引用不明来源。";
+  config.polishRoot.append(note);
+
   identitySuggestions(target).forEach((sentence) => {
     const item = document.createElement("button");
     item.className = "polish-option";
@@ -1162,6 +1186,16 @@ function setIdentityText(target, sentence) {
   renderIdentityHelper(target);
 }
 
+function finishSentence(text) {
+  const value = String(text || "").replace(/\s+/g, " ").trim();
+  if (!value) return "";
+  return /[。.!！?？]$/.test(value) ? value : `${value}。`;
+}
+
+function withoutFinalPunctuation(text) {
+  return String(text || "").replace(/[。.!！?？]+$/g, "").trim();
+}
+
 function identityCore(text, target) {
   const cleaned = cleanIdentityInput(text)
     .replace(/^我是一个?/, "")
@@ -1179,20 +1213,8 @@ function identityCore(text, target) {
     .trim() || identityFallbacks[target] || identityFallbacks.evidence;
 }
 
-function identityNoun(core) {
-  return /人|女人|女生|女孩|创造者|学习者|实践者|主人|自己$/.test(core) ? core : `${core}的人`;
-}
-
 function shortActionText() {
   return selectedActionText().replace(/[。.!！?？]+$/g, "").slice(0, 38);
-}
-
-function identityInspiration(target) {
-  const bookLine = activeWereadHighlights()[Number(state.bookSpin || 0) % Math.max(activeWereadHighlights().length, 1)]?.text || "";
-  const onlineLine = onlineKeyPoints()[Number(state.onlineSpin || 0) % Math.max(onlineKeyPoints().length, 1)]?.text || "";
-  const richLine = richLifeLines()[Number(state.richLifeSpin || 0) % Math.max(richLifeLines().length, 1)] || "";
-  const source = target === "future" ? richLine || bookLine || onlineLine : bookLine || onlineLine || richLine;
-  return cleanBookHighlight(source, 64).replace(/[。.!！?？]+$/g, "");
 }
 
 function identityTheme(core) {
@@ -1204,34 +1226,96 @@ function identityTheme(core) {
   return "生活质量";
 }
 
+function identityExpansionSet(theme, target) {
+  const futureSets = {
+    "财富和自由": [
+      "我允许自己拥有更多选择权，也允许金钱用干净、稳定、持续的方式来到我的生活里。",
+      "我的生活不需要被价格和恐惧牵着走，我会慢慢拥有时间、空间和决定权。",
+      "我会用清楚的账目、稳定的能力和长期眼光，支持这个身份一步一步变真实。"
+    ],
+    "学习和成长": [
+      "我会给自己时间学习语言、文化和真正有价值的知识，让眼界一点一点打开。",
+      "我不需要一下子懂很多，我只要每天学一点、用一点、复盘一点。",
+      "我会把学到的东西变成表达、判断力和未来可以创造价值的能力。"
+    ],
+    "气质、关系和吸引力": [
+      "我的气质来自稳定的内心、清楚的边界、被好好照顾的身体和越来越好的选择。",
+      "我允许高质量的人、温柔的关系和适合我的机会靠近我。",
+      "我会用更好的环境、习惯和自我照顾，让自己自然地变得更漂亮、更松弛。"
+    ],
+    "身心状态": [
+      "我会认真照顾自己的身体、睡眠、呼吸和情绪，因为这是我享受财富的基础。",
+      "我允许自己慢下来，不用靠紧绷证明价值。",
+      "我会把健康、瑜伽、冥想和休息放进真正的生活里。"
+    ],
+    "行动和创造": [
+      "我不需要等到完全准备好才开始，我可以从一个很小但真实的动作开始。",
+      "我会把灵感变成行动，把行动变成证据，把证据慢慢累积成能力。",
+      "我允许自己边做边学，慢慢建立属于自己的机会。"
+    ],
+    "生活质量": [
+      "我会让生活变得更干净、更安静、更有秩序，也更支持我成为想成为的人。",
+      "我允许自己拥有舒服的家、清楚的时间、好的服务和被照顾的感觉。",
+      "我会从今天的小选择开始，把生活一点一点调到更好的状态。"
+    ]
+  };
+
+  const evidenceSets = {
+    "财富和自由": [
+      "今天这个小动作，是我在练习把钱、时间和选择权重新拿回自己手里。",
+      "我正在用具体行动证明：财富不是模糊的幻想，而是可以被记录、学习和累积的能力。"
+    ],
+    "学习和成长": [
+      "今天我没有只收藏知识，我让自己真正学了一点、写了一点、理解了一点。",
+      "这个小动作正在训练我的表达、理解力和未来创造价值的能力。"
+    ],
+    "气质、关系和吸引力": [
+      "今天我用一个具体动作照顾自己的状态，让自己更稳定、更松弛、更有吸引力。",
+      "我正在练习成为那种内在稳定、外在清爽、选择越来越好的人。"
+    ],
+    "身心状态": [
+      "今天我把身体和心放回重要位置，这本身就是一种富足的练习。",
+      "我正在学习用温柔、稳定、真实的小行动支持自己。"
+    ],
+    "行动和创造": [
+      "今天我没有等完美时机，而是先完成了一个可以开始的小动作。",
+      "这个小动作会让我的信心更具体，因为它不是想出来的，是做出来的。"
+    ],
+    "生活质量": [
+      "今天我做的是一件很小的事，但它正在把我的生活调得更清楚、更舒服。",
+      "我正在练习让日常生活支持我的成长，而不是消耗我。"
+    ]
+  };
+
+  return target === "future" ? futureSets[theme] || futureSets["生活质量"] : evidenceSets[theme] || evidenceSets["生活质量"];
+}
+
 function identitySuggestions(target) {
   const config = identityTarget(target);
   const raw = state[config.stateKey] || "";
-  const original = cleanIdentityInput(raw);
+  const original = finishSentence(cleanIdentityInput(raw));
   const core = identityCore(raw, target);
-  const noun = identityNoun(core);
   const action = shortActionText();
-  const inspiration = identityInspiration(target);
   const theme = identityTheme(core);
+  const expansions = identityExpansionSet(theme, target);
+  const base = withoutFinalPunctuation(original);
   const offset = Number(state[config.polishKey] || 0);
   const suggestions =
     target === "future"
       ? [
-          `${original} 这不是一句口号，而是我正在练习的生活方向：我开始允许自己拥有更多时间、更多选择、更多支持。`,
-          `我是一个正在成为${noun}的人。我的${theme}会越来越清楚，我会用稳定的小行动，把这个身份慢慢活出来。`,
-          `我是一个${noun}。我不需要急着证明自己，我只需要每天靠近一点点：更有能力、更有余裕，也更会照顾自己。`,
-          `我是一个值得过好生活的人。我可以拥有安静的家、健康的身体、自由的旅行、清楚的钱，以及让我持续成长的环境。`,
-          inspiration ? `我是一个会把好知识变成生活的人。今天这句话提醒我：${inspiration}。所以我允许自己继续变得更自由、更丰盛。` : `我是一个${noun}，我正在把愿景从想象变成可以被我亲手建起来的生活。`
+          original,
+          `${base}，${expansions[0]}`,
+          `${base}，${expansions[1]}`,
+          `${base}，${expansions[2]}`
         ]
       : [
-          `${original} 我不是在等自己突然变厉害，我是在用今天这个小动作，让这个身份有一点真实证据。`,
-          `我是一个正在练习${core}的人。刚刚这一步虽然小，但它代表我没有只停留在想象里：${action}。`,
-          `我是一个${noun}。我愿意把${theme}变成每天看得见的小证据，而不是只在心里想一想。`,
-          `我是一个会慢慢累积的人。今天我完成的不是一件大事，而是一颗很小、但会继续长大的种子：${action}。`,
-          inspiration ? `我是一个会从知识里拿回行动力的人。${inspiration}；而我今天先从这一小步开始。` : `我是一个${noun}，所以我今天选择先完成一件真实、具体、不会压垮自己的小事。`
+          original,
+          `${base}，所以我今天先完成了一个真实的小动作：${action}。`,
+          `${base}，${expansions[0]}`,
+          `${base}，${expansions[1]}`
         ];
 
-  return pickDailyItems(suggestions, 3, offset);
+  return pickDailyItems(suggestions.filter(Boolean), 3, offset);
 }
 
 function renderHistory() {
@@ -1353,6 +1437,7 @@ function bindEvents() {
   if (suggestedActionBtn) {
     suggestedActionBtn.addEventListener("click", () => {
       state.customAction = currentAction().title;
+      state.selectedActionLabel = "系统建议";
       state.actionPolishOpen = false;
       saveState();
       render();
@@ -1362,6 +1447,7 @@ function bindEvents() {
   document.querySelectorAll(".quick-action").forEach((button) => {
     button.addEventListener("click", () => {
       state.customAction = button.dataset.action || button.textContent.trim();
+      state.selectedActionLabel = button.textContent.trim();
       state.actionPolishOpen = false;
       saveState();
       render();
@@ -1431,6 +1517,7 @@ function bindEvents() {
     state.actionIndex = (Number(state.actionIndex || 0) + 1) % actions.length;
     state.done = false;
     state.customAction = "";
+    state.selectedActionLabel = "";
     state.evidence = "";
     state.futureIdentity = "";
     state.currentHistoryId = null;

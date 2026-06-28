@@ -282,6 +282,29 @@ h2 {
   color: var(--ink);
 }
 
+.choice-button.is-selected {
+  border-color: rgba(234, 216, 168, 0.86);
+  background:
+    linear-gradient(135deg, rgba(234, 216, 168, 0.2), rgba(92, 152, 116, 0.58)),
+    rgba(24, 60, 41, 0.82);
+  box-shadow:
+    0 0 0 2px rgba(234, 216, 168, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: #fff8dc;
+}
+
+.choice-button.is-selected::before {
+  content: "已选择";
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 3px 7px;
+  border: 1px solid rgba(255, 248, 220, 0.42);
+  border-radius: 999px;
+  color: #fff8dc;
+  font-size: 11px;
+  font-weight: 900;
+}
+
 .choice-button span,
 .choice-button small {
   display: block;
@@ -294,6 +317,11 @@ h2 {
   display: block;
   margin-top: 3px;
   font-size: 16px;
+}
+
+.choice-button.is-selected span,
+.choice-button.is-selected small {
+  color: #f3efd7;
 }
 
 .compact-field {
