@@ -23,6 +23,10 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 function outputText(data: any) {
+  if (typeof data?.choices?.[0]?.message?.content === "string") {
+    return data.choices[0].message.content;
+  }
+
   if (typeof data?.output_text === "string") return data.output_text;
 
   return (data?.output || [])
@@ -69,9 +73,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const openAiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!openAiKey) {
-      return jsonResponse({ error: "OPENAI_API_KEY is not configured." }, 500);
+    const openRouterKey = Deno.env.get("OPENROUTER_API_KEY");
+    if (!openRouterKey) {
+      return jsonResponse({ error: "OPENROUTER_API_KEY is not configured." }, 500);
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -122,22 +126,30 @@ Deno.serve(async (req) => {
 第一步行动：${action || "未填写"}
 `;
 
-    const response = await fetch("https://api.openai.com/v1/responses", {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${openAiKey}`,
-        "Content-Type": "application/json"
+        Authorization: `Bearer ${openRouterKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": Deno.env.get("APP_URL") || "https://yilinyyl.github.io/rich-learning-system/",
+        "X-Title": "Rich Learning System"
       },
       body: JSON.stringify({
-        model: Deno.env.get("OPENAI_MODEL") || "gpt-5.2",
-        input: prompt,
-        max_output_tokens: 700
+        model: Deno.env.get("OPENROUTER_MODEL") || "openrouter/free",
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_tokens: 700,
+        response_format: { type: "json_object" }
       })
     });
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      return jsonResponse({ error: data?.error?.message || "OpenAI request failed." }, 502);
+      return jsonResponse({ error: data?.error?.message || "OpenRouter request failed." }, 502);
     }
 
     const parsed = extractJson(outputText(data));

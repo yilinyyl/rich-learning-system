@@ -85,7 +85,7 @@ Acceptance criteria:
 ### FR-2C AI Polishing Edge Function
 
 - App should include a Supabase Edge Function named `polish-identity`.
-- The function should read `OPENAI_API_KEY` from Supabase Function secrets, not from GitHub Pages.
+- The function should read `OPENROUTER_API_KEY` from Supabase Function secrets, not from GitHub Pages.
 - The function should accept one short sentence starting with “我是”, the target field, and the first-step action.
 - The function should return multiple Chinese suggestions that preserve the original meaning.
 - The function should reject unauthenticated requests.
@@ -93,7 +93,7 @@ Acceptance criteria:
 Acceptance criteria:
 - `supabase/functions/polish-identity/index.ts` exists.
 - The frontend calls `supabaseClient.functions.invoke("polish-identity", ...)`.
-- No real OpenAI key value is present in `config.js`, `app.js`, or committed docs.
+- No real OpenRouter key value is present in `config.js`, `app.js`, or committed docs.
 - AI failure does not break the page and does not write to history.
 
 ### FR-3 Cloud Sync

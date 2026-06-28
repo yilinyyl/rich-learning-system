@@ -85,14 +85,15 @@ Expected result:
 - Polished suggestions are shown only after the optimize click.
 - AI suggestions preserve the user's original meaning and do not change topic.
 - Choosing a polished sentence replaces the correct field.
-- The helper does not expose `OPENAI_API_KEY` in browser files.
+- The helper does not expose `OPENROUTER_API_KEY` in browser files.
 
 ### TC-3D AI Edge Function
 
 Precondition:
 - Supabase is configured.
 - User is logged in.
-- `OPENAI_API_KEY` is set as a Supabase Function secret.
+- `OPENROUTER_API_KEY` is set as a Supabase Function secret.
+- `OPENROUTER_MODEL` is set, or the function falls back to `openrouter/free`.
 - `polish-identity` Edge Function is deployed.
 
 Steps:

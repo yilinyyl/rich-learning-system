@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-28.6";
+const APP_VERSION = "2026-06-28.7";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -1381,7 +1381,7 @@ async function generateAiIdentitySuggestions(target) {
     state[config.suggestionsKey] = suggestions;
     state[config.errorKey] = "";
   } catch (error) {
-    state[config.errorKey] = `AI 优化暂时不可用：${error.message || "请确认 Edge Function 和 OPENAI_API_KEY 已设置"}。下面先显示本地备用建议。`;
+    state[config.errorKey] = `AI 优化暂时不可用：${error.message || "请确认 Edge Function 和 OPENROUTER_API_KEY 已设置"}。下面先显示本地备用建议。`;
     state[config.suggestionsKey] = [];
   } finally {
     state[config.loadingKey] = false;
