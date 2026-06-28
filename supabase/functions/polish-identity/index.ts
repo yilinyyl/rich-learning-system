@@ -22,6 +22,17 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+function cleanSecret(value: string | undefined) {
+  return String(value || "")
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .trim();
+}
+
+function isSafeHeaderValue(value: string) {
+  return /^[\x20-\x7E]+$/.test(value);
+}
+
 function outputText(data: any) {
   if (typeof data?.choices?.[0]?.message?.content === "string") {
     return data.choices[0].message.content;
@@ -85,9 +96,12 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const openRouterKey = Deno.env.get("OPENROUTER_API_KEY");
+    const openRouterKey = cleanSecret(Deno.env.get("OPENROUTER_API_KEY"));
     if (!openRouterKey) {
       return jsonResponse({ error: "OPENROUTER_API_KEY is not configured." });
+    }
+    if (!isSafeHeaderValue(openRouterKey)) {
+      return jsonResponse({ error: "OPENROUTER_API_KEY contains invalid characters. Please reset the secret with only the sk-or-... key text." });
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -143,9 +157,7 @@ Deno.serve(async (req) => {
       method: "POST",
       headers: {
         Authorization: `Bearer ${openRouterKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": Deno.env.get("APP_URL") || "https://yilinyyl.github.io/rich-learning-system/",
-        "X-OpenRouter-Title": "Rich Learning System"
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         model: Deno.env.get("OPENROUTER_MODEL") || "openrouter/free",
