@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-21.8";
+const APP_VERSION = "2026-06-28.1";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -76,6 +76,19 @@ const extraExamples = [
   "我是一个尊重真实需求的人，所以我今天问了一个真实问题。",
   "我是一个保护注意力的人，所以我今天练习了专注，没有让手机拿走我的注意力。"
 ];
+
+const identityWords = [
+  "自由", "丰盛", "稳定", "清醒", "温柔而坚定", "有选择权", "被支持", "值得被爱",
+  "优雅", "有气质", "有能量", "有创造力", "有行动力", "越来越富足", "越来越松弛", "越来越勇敢",
+  "会照顾自己", "会接住机会", "会管理金钱", "会保护时间", "会学习", "会表达", "会创造价值", "会被好运看见",
+  "内心安定", "身体健康", "头脑清楚", "生活有秩序", "收入越来越稳定", "被贵人支持", "有高质量关系", "有长期眼光",
+  "值得拥有好生活", "允许自己成功", "允许自己收钱", "允许自己被帮助", "慢慢变有钱", "慢慢变强大", "慢慢变漂亮", "慢慢变自由"
+];
+
+const identityFallbacks = {
+  evidence: "每天用小行动慢慢变富有",
+  future: "有时间、有钱、有健康身体，也能自由学习和旅行"
+};
 
 const richLifeSearches = [
   { lang: "zh", source: "Wikipedia 中文", query: "家族办公室 财富管理", lens: "财富架构" },
@@ -1052,7 +1065,111 @@ function render() {
     frameworkRoot.append(item);
   });
 
+  renderIdentityHelpers();
   renderHistory();
+}
+
+function identityTarget(target) {
+  return {
+    stateKey: target === "future" ? "futureIdentity" : "evidence",
+    textarea: document.querySelector(target === "future" ? "#futureIdentityText" : "#evidenceText"),
+    wordRoot: document.querySelector(target === "future" ? "#futureWordBank" : "#evidenceWordBank"),
+    polishRoot: document.querySelector(target === "future" ? "#futurePolishList" : "#evidencePolishList"),
+    spinKey: target === "future" ? "futureWordSpin" : "evidenceWordSpin",
+    polishKey: target === "future" ? "futurePolishSpin" : "evidencePolishSpin"
+  };
+}
+
+function renderIdentityHelpers() {
+  renderIdentityHelper("evidence");
+  renderIdentityHelper("future");
+}
+
+function renderIdentityHelper(target) {
+  const config = identityTarget(target);
+  if (!config.wordRoot || !config.polishRoot) return;
+
+  config.wordRoot.innerHTML = "";
+  pickDailyItems(identityWords, 8, Number(state[config.spinKey] || 0) + (target === "future" ? 5 : 0)).forEach((word) => {
+    const chip = document.createElement("button");
+    chip.className = "word-chip";
+    chip.type = "button";
+    chip.textContent = word;
+    chip.addEventListener("click", () => {
+      setIdentityText(target, `我是一个${word}的人。`);
+    });
+    config.wordRoot.append(chip);
+  });
+
+  config.polishRoot.innerHTML = "";
+  identitySuggestions(target).forEach((sentence) => {
+    const item = document.createElement("button");
+    item.className = "polish-option";
+    item.type = "button";
+    item.textContent = sentence;
+    item.addEventListener("click", () => setIdentityText(target, sentence));
+    config.polishRoot.append(item);
+  });
+}
+
+function setIdentityText(target, sentence) {
+  const config = identityTarget(target);
+  state[config.stateKey] = sentence;
+  if (config.textarea) config.textarea.value = sentence;
+  saveEvidenceHistory();
+  saveState();
+  renderIdentityHelper(target);
+  renderHistory();
+}
+
+function identityCore(text, target) {
+  const cleaned = cleanIdentityInput(text)
+    .replace(/^我是一个?/, "")
+    .replace(/^正在成为一个?/, "")
+    .replace(/[。.!！?？]+$/g, "")
+    .trim();
+
+  if (!cleaned) return identityFallbacks[target] || identityFallbacks.evidence;
+
+  return cleaned
+    .replace(/^一个?/, "")
+    .replace(/的人，所以.*$/g, "")
+    .replace(/的人，我.*$/g, "")
+    .replace(/的人$/, "")
+    .trim() || identityFallbacks[target] || identityFallbacks.evidence;
+}
+
+function identityNoun(core) {
+  return /人|女人|女生|女孩|创造者|学习者|实践者|主人|自己$/.test(core) ? core : `${core}的人`;
+}
+
+function shortActionText() {
+  return selectedActionText().replace(/[。.!！?？]+$/g, "").slice(0, 38);
+}
+
+function identitySuggestions(target) {
+  const config = identityTarget(target);
+  const raw = state[config.stateKey] || "";
+  const core = identityCore(raw, target);
+  const noun = identityNoun(core);
+  const action = shortActionText();
+  const offset = Number(state[config.polishKey] || 0);
+  const suggestions =
+    target === "future"
+      ? [
+          `我是一个${noun}，我的生活正在变得更自由、更丰盛、更被支持。`,
+          "我是一个值得被支持、也值得越来越丰盛的人，我允许机会、金钱和贵人慢慢靠近我。",
+          `我是一个${noun}，我有时间、有健康、有选择，也有能力照顾自己喜欢的人。`,
+          `我是一个正在成为${noun}的人，我的每一天都在靠近更优雅、更富足的生活。`
+        ]
+      : [
+          `我是一个${noun}，所以我今天已经用一个小行动证明了这一点。`,
+          `我是一个正在练习${core}的人，我允许自己从今天这一步开始。`,
+          `我是一个${noun}，我刚刚完成了：${action}。`,
+          `我是一个会把愿望变成行动证据的人，所以我今天没有只停留在想象里。`
+        ];
+
+  return pickDailyItems(suggestions, 3, offset);
 }
 
 function renderHistory() {
@@ -1165,6 +1282,7 @@ function bindEvents() {
     state.evidence = event.target.value;
     saveEvidenceHistory();
     saveState();
+    renderIdentityHelper("evidence");
     renderHistory();
   });
 
@@ -1174,7 +1292,44 @@ function bindEvents() {
       state.futureIdentity = event.target.value;
       saveEvidenceHistory();
       saveState();
+      renderIdentityHelper("future");
       renderHistory();
+    });
+  }
+
+  const evidenceWordsBtn = document.querySelector("#evidenceWordsBtn");
+  if (evidenceWordsBtn) {
+    evidenceWordsBtn.addEventListener("click", () => {
+      state.evidenceWordSpin = Number(state.evidenceWordSpin || 0) + 7;
+      saveState();
+      renderIdentityHelper("evidence");
+    });
+  }
+
+  const futureWordsBtn = document.querySelector("#futureWordsBtn");
+  if (futureWordsBtn) {
+    futureWordsBtn.addEventListener("click", () => {
+      state.futureWordSpin = Number(state.futureWordSpin || 0) + 7;
+      saveState();
+      renderIdentityHelper("future");
+    });
+  }
+
+  const evidencePolishBtn = document.querySelector("#evidencePolishBtn");
+  if (evidencePolishBtn) {
+    evidencePolishBtn.addEventListener("click", () => {
+      state.evidencePolishSpin = Number(state.evidencePolishSpin || 0) + 1;
+      saveState();
+      renderIdentityHelper("evidence");
+    });
+  }
+
+  const futurePolishBtn = document.querySelector("#futurePolishBtn");
+  if (futurePolishBtn) {
+    futurePolishBtn.addEventListener("click", () => {
+      state.futurePolishSpin = Number(state.futurePolishSpin || 0) + 1;
+      saveState();
+      renderIdentityHelper("future");
     });
   }
 

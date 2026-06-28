@@ -44,6 +44,7 @@ Acceptance criteria:
 
 - App must provide a second-step area for writing an “我是...” sentence.
 - The second-step sentence should be based on the first-step action.
+- App should provide local word choices and sentence-polishing suggestions when the user cannot find wording.
 - App must save the sentence locally while the user types.
 - App must keep multiple evidence entries, including multiple entries on the same day.
 - History display should stay lightweight by showing only the latest 3 calendar dates.
@@ -52,6 +53,7 @@ Acceptance criteria:
 
 Acceptance criteria:
 - User can type evidence.
+- User can click a word or a polished sentence and have it fill the evidence field.
 - Evidence appears in history.
 - Two different saved sentences from the same day both appear in history.
 - History does not show more than the latest 3 dates.
@@ -62,10 +64,12 @@ Acceptance criteria:
 
 - App must provide a third-step area for writing an “我是...” future identity sentence.
 - The third-step sentence should be based on who the user hopes to become.
+- App should provide local wording support for future identity sentences.
 - The saved history entry should include the first-step action, second-step evidence, and third-step future identity.
 
 Acceptance criteria:
 - User can type a future identity sentence.
+- User can use the helper to generate or improve a future identity sentence without sending data to an external AI service.
 - The future identity appears in history with the same saved entry.
 - Saving and moving to the next action clears the third-step input.
 

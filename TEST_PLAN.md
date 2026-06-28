@@ -62,6 +62,21 @@ Expected result:
 - The second entry does not overwrite the first local history entry.
 - The visible history shows one “我是...” identity sentence per entry without displaying the full first-step action block.
 
+### TC-3A Identity Writing Helper
+
+Steps:
+1. Open the second-step evidence field.
+2. Click one word chip.
+3. Click “帮我优化这句”.
+4. Choose one polished sentence.
+5. Repeat the same flow in the third-step future identity field.
+
+Expected result:
+- The selected word fills the correct field.
+- Polished suggestions are shown locally.
+- Choosing a polished sentence replaces the correct field.
+- The helper does not require an external AI API call.
+
 ### TC-3B Three-Day History Display
 
 Steps:
