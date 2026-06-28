@@ -38,8 +38,8 @@
             <div class="action-choice-list">
               <button id="suggestedActionBtn" class="choice-button" type="button">
                 <span>系统建议</span>
-                <strong id="actionTitle">学一个词 5 分钟</strong>
-                <small id="actionDetail">只学一个你不懂的词，然后用自己的话写一句解释。</small>
+                <strong id="actionTitle">学一句语言 5 分钟</strong>
+                <small id="actionDetail">学一句英文、德文、日文或你想学的语言。只写：这句话怎么说，以及它是什么意思。</small>
               </button>
               <button class="choice-button quick-action" type="button" data-action="我安静呼吸 5 分钟，想象自己已经拥有自由、健康和选择权。">显化自由生活</button>
               <button class="choice-button quick-action" type="button" data-action="我写下今天已经拥有的 3 个丰盛证据，提醒自己不是从缺乏开始。">写 3 个丰盛证据</button>
@@ -50,9 +50,13 @@
             </div>
 
             <label class="evidence compact-field">
-              <span>或者自己写：我刚刚做了...</span>
-              <textarea id="customActionText" rows="2" placeholder="例：我看了 8 分钟 AI 教程，并写下一个我听懂的词。"></textarea>
+              <span>请写清楚：我刚刚做了...</span>
+              <textarea id="customActionText" rows="2" placeholder="例：我学了 5 分钟德文，写下 Guten Morgen = 早上好。"></textarea>
             </label>
+            <div class="identity-helper action-helper" aria-label="第一步行动优化助手">
+              <button id="actionPolishBtn" class="small-button helper-button" type="button">优化我写的第一步</button>
+              <div id="actionPolishList" class="polish-list"></div>
+            </div>
 
             <label class="done-row">
               <input id="doneCheck" type="checkbox">

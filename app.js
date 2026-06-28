@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-28.2";
+const APP_VERSION = "2026-06-28.3";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -9,12 +9,12 @@ let cloudSaveTimer = null;
 
 const actions = [
   {
-    title: "学一个词 5 分钟",
-    detail: "只学一个你不懂的词，然后用自己的话写一句解释。",
+    title: "学一句语言 5 分钟",
+    detail: "学一句英文、德文、日文或你想学的语言。只写：这句话怎么说，以及它是什么意思。",
     examples: [
-      "我是一个每天愿意学一点的人，所以我今天学会了 AI 是电脑帮人处理信息的工具。",
-      "我是一个开始懂钱的人，所以我今天学会了现金流就是钱进来和钱出去的节奏。",
-      "我是一个会让生活变轻松的人，所以我今天学会了自动化就是让电脑帮我重复做一件事。"
+      "我是一个每天愿意学一点语言的人，所以我今天学会了一句可以真实使用的话。",
+      "我是一个越来越会表达自己的人，所以我今天用 5 分钟学了一句新语言。",
+      "我是一个能走向世界的人，所以我今天多学会了一句可以连接别人的话。"
     ]
   },
   {
@@ -1065,7 +1065,60 @@ function render() {
     frameworkRoot.append(item);
   });
 
+  renderActionHelper();
   renderIdentityHelpers();
+  renderHistory();
+}
+
+function renderActionHelper() {
+  const root = document.querySelector("#actionPolishList");
+  if (!root) return;
+  root.innerHTML = "";
+  root.hidden = !state.actionPolishOpen;
+  if (!state.actionPolishOpen) return;
+
+  const action = String(state.customAction || "").trim();
+  if (!action) {
+    const hint = document.createElement("div");
+    hint.className = "polish-hint";
+    hint.textContent = "先写一句你刚刚真实做了什么，我再帮你优化成更清楚的第一步。";
+    root.append(hint);
+    return;
+  }
+
+  actionSuggestions(action).forEach((sentence) => {
+    const item = document.createElement("button");
+    item.className = "polish-option";
+    item.type = "button";
+    item.textContent = sentence;
+    item.addEventListener("click", () => setActionText(sentence));
+    root.append(item);
+  });
+}
+
+function actionSuggestions(action) {
+  const cleaned = String(action || "")
+    .replace(/\s+/g, " ")
+    .replace(/[。.!！?？]+$/g, "")
+    .trim();
+  const offset = Number(state.actionPolishSpin || 0);
+  const suggestions = [
+    `我用 5-10 分钟完成了：${cleaned}。`,
+    `我把今天的成长落在一个具体行动上：${cleaned}。`,
+    `我认真做了一件能让我更会表达、更自由的小事：${cleaned}。`,
+    `我没有只停留在想法里，我刚刚实际做了：${cleaned}。`
+  ];
+  return pickDailyItems(suggestions, 3, offset);
+}
+
+function setActionText(sentence) {
+  state.customAction = sentence;
+  state.actionPolishOpen = false;
+  const customActionText = document.querySelector("#customActionText");
+  if (customActionText) customActionText.value = sentence;
+  saveEvidenceHistory();
+  saveState();
+  renderActionHelper();
   renderHistory();
 }
 
@@ -1211,8 +1264,46 @@ function renderHistory() {
     const lineNode = document.createElement("p");
     lineNode.textContent = historyIdentityLine(entry.text);
     item.append(lineNode);
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "history-delete";
+    deleteButton.type = "button";
+    deleteButton.textContent = "删除这条";
+    deleteButton.addEventListener("click", () => deleteHistoryEntry(entry));
+    item.append(deleteButton);
     historyRoot.append(item);
   });
+}
+
+async function deleteHistoryEntry(entry) {
+  if (!entry?.id) return;
+  const ok = window.confirm("确定删除这条历史吗？删除后 app 里不会再显示它。");
+  if (!ok) return;
+
+  state.history = (Array.isArray(state.history) ? state.history : []).filter((item) => item.id !== entry.id);
+
+  if (state.currentHistoryId === entry.id) {
+    state.currentHistoryId = null;
+    state.customAction = "";
+    state.evidence = "";
+    state.futureIdentity = "";
+  }
+
+  saveState();
+  render();
+
+  if (!supabaseClient || !currentUser) return;
+
+  const { error } = await supabaseClient
+    .from("evidence_entries")
+    .delete()
+    .eq("user_id", currentUser.id)
+    .eq("id", entry.id);
+
+  if (error) {
+    setCloudStatus(`删除云端历史失败：${error.message}`);
+  } else {
+    setCloudStatus("已删除这条云端历史。");
+  }
 }
 
 function latestHistoryDates(history, limit) {
@@ -1266,6 +1357,7 @@ function bindEvents() {
   if (suggestedActionBtn) {
     suggestedActionBtn.addEventListener("click", () => {
       state.customAction = currentAction().title;
+      state.actionPolishOpen = false;
       saveEvidenceHistory();
       saveState();
       render();
@@ -1275,6 +1367,7 @@ function bindEvents() {
   document.querySelectorAll(".quick-action").forEach((button) => {
     button.addEventListener("click", () => {
       state.customAction = button.dataset.action || button.textContent.trim();
+      state.actionPolishOpen = false;
       saveEvidenceHistory();
       saveState();
       render();
@@ -1285,9 +1378,21 @@ function bindEvents() {
   if (customActionText) {
     customActionText.addEventListener("input", (event) => {
       state.customAction = event.target.value;
+      state.actionPolishOpen = false;
       saveEvidenceHistory();
       saveState();
+      renderActionHelper();
       renderHistory();
+    });
+  }
+
+  const actionPolishBtn = document.querySelector("#actionPolishBtn");
+  if (actionPolishBtn) {
+    actionPolishBtn.addEventListener("click", () => {
+      state.actionPolishOpen = true;
+      state.actionPolishSpin = Number(state.actionPolishSpin || 0) + 1;
+      saveState();
+      renderActionHelper();
     });
   }
 

@@ -613,6 +613,21 @@ button:hover {
   margin: 5px 0 0;
 }
 
+.history-delete {
+  width: auto;
+  margin-top: 10px;
+  padding: 7px 10px;
+  border: 1px solid rgba(240, 183, 166, 0.28);
+  background: rgba(80, 32, 28, 0.42);
+  color: #ffe8df;
+  box-shadow: none;
+  font-size: 12px;
+}
+
+.history-delete:hover {
+  background: rgba(111, 45, 38, 0.68);
+}
+
 .example,
 .resource {
   padding: 12px 13px;

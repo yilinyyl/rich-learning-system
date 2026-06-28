@@ -29,6 +29,8 @@
 
 - App must show one suggested small action at a time.
 - App must allow the user to select from quick actions or type their own real action.
+- The first-step custom action field should be treated as the clear action record, not as a secondary optional note.
+- App should provide local polishing suggestions for the first-step action after the user explicitly asks to optimize it.
 - Each action must be understandable without AI or software background.
 - Each action should be small enough to start within 5 to 10 minutes.
 - Quick actions should support wealth growth through both practical action and inner state, such as abundance evidence, gratitude for money, manifestation visualization, a calmer body, a clearer home space, or learning that raises awareness.
@@ -37,6 +39,7 @@ Acceptance criteria:
 - Page shows a first-step card.
 - Action title and detail are visible.
 - User can choose a quick action or type a custom action.
+- User can optimize the custom first-step action and choose a clearer version.
 - User can check completion.
 - Quick action choices are concrete enough that the user knows exactly what to do in 5 to 10 minutes.
 
@@ -50,6 +53,7 @@ Acceptance criteria:
 - History display should stay lightweight by showing only the latest 3 calendar dates.
 - History display should show one identity sentence per entry, not the full first-step action block.
 - If the same identity sentence appears in multiple records, the history display should show it only once.
+- User should be able to delete an unnecessary history item after confirmation.
 
 Acceptance criteria:
 - User can type evidence.
@@ -60,6 +64,7 @@ Acceptance criteria:
 - History does not show more than the latest 3 dates.
 - Each visible history entry is compact and does not expand into multiple identity lines.
 - Repeated “我是...” sentences are deduplicated across visible history.
+- Deleting a history item removes it locally and attempts to remove the matching cloud row when logged in.
 
 ### FR-2B Future Identity
 

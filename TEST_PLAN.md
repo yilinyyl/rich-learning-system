@@ -37,11 +37,15 @@ Expected result:
 
 Steps:
 1. Select one quick action related to inner wealth growth, such as manifestation visualization, abundance evidence, gratitude for money, a calmer body, a clearer home space, or awareness learning.
-2. Check “我完成了第一步”.
-3. Refresh the page.
+2. Edit the first-step action field.
+3. Click “优化我写的第一步”.
+4. Choose one polished first-step sentence.
+5. Check “我完成了第一步”.
+6. Refresh the page.
 
 Expected result:
 - The selected/custom action is saved locally.
+- The optimized action replaces the first-step action field.
 - The checkbox state is saved locally.
 - The quick action is concrete enough to start within 5 to 10 minutes.
 - The quick action does not feel purely practical or overly business-like.
@@ -90,6 +94,17 @@ Expected result:
 - Older entries are not shown in the history section.
 - Multiple entries from the same visible date can still appear separately.
 - The same “我是...” sentence does not appear repeatedly across history cards.
+
+### TC-3C Delete History Item
+
+Steps:
+1. Save one history item.
+2. Click “删除这条”.
+3. Confirm the delete prompt.
+
+Expected result:
+- The item disappears from local history.
+- If logged in, the app attempts to delete the matching Supabase row.
 
 ### TC-4 Cloud Login
 
