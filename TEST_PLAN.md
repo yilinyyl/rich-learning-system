@@ -45,6 +45,7 @@ Steps:
 
 Expected result:
 - The selected/custom action is saved locally.
+- The selected quick action stays visually highlighted even after the user edits the first-step action field.
 - The optimized action replaces the first-step action field.
 - The checkbox state is saved locally.
 - The quick action is concrete enough to start within 5 to 10 minutes.
@@ -56,12 +57,14 @@ Steps:
 1. Select or type a first-step action.
 2. Type a second-step “我是...” action evidence sentence.
 3. Type a third-step “我是...” future identity sentence.
-4. Confirm the combined entry appears in history.
+4. Confirm no new history entry appears before saving.
 5. Click save / next.
-6. Type a second entry.
+6. Confirm the combined entry appears in history.
+7. Type and save a second entry.
 
 Expected result:
 - The saved history entry stores first step, second step, and third step.
+- Typing, choosing quick actions, clicking optimize, or choosing optimized suggestions does not save history by itself.
 - Both entries appear in history.
 - The second entry does not overwrite the first local history entry.
 - The visible history shows one “我是...” identity sentence per entry without displaying the full first-step action block.
@@ -70,18 +73,39 @@ Expected result:
 
 Steps:
 1. Open the second-step evidence field.
-2. Click one word chip.
-3. Confirm polished suggestions are not shown until the optimize button is clicked.
-4. Type one custom “我是...” sentence.
-5. Click “优化我写的这句”.
+2. Type one custom “我是...” sentence.
+3. Click “优化并展开我这句”.
+4. If logged in and the Edge Function is deployed, wait for AI suggestions.
+5. If AI is unavailable, confirm the app shows a clear fallback message and local suggestions.
 6. Choose one polished sentence.
-7. Repeat the same flow in the third-step future identity field.
+7. Confirm history still does not change until clicking “保存今天这三步”.
+8. Repeat the same flow in the third-step future identity field.
 
 Expected result:
-- The selected word fills the correct field.
-- Polished suggestions are shown locally only after the optimize click.
+- Polished suggestions are shown only after the optimize click.
+- AI suggestions preserve the user's original meaning and do not change topic.
 - Choosing a polished sentence replaces the correct field.
-- The helper does not require an external AI API call.
+- The helper does not expose `OPENAI_API_KEY` in browser files.
+
+### TC-3D AI Edge Function
+
+Precondition:
+- Supabase is configured.
+- User is logged in.
+- `OPENAI_API_KEY` is set as a Supabase Function secret.
+- `polish-identity` Edge Function is deployed.
+
+Steps:
+1. Type `我是一个慢慢进入富足状态的人。`
+2. Click “优化并展开我这句”.
+3. Inspect returned suggestions.
+4. Turn off or undeploy the function and retry.
+
+Expected result:
+- When deployed, AI returns several “我是...” suggestions related to the original sentence.
+- Suggestions do not mention AI, prompt, model, or source.
+- When unavailable, the app displays a clear error and local fallback suggestions.
+- No history or Supabase evidence row is created until the user clicks “保存今天这三步”.
 
 ### TC-3B Three-Day History Display
 

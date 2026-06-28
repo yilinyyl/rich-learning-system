@@ -243,6 +243,55 @@ window.RICH_APP_CONFIG = {
 - 不要填 `/rest/v1`、`/auth/v1`、`/project` 之类路径。
 - 不要把 service role key 放进 `config.js`。
 
+## AI 优化“我是...”句子
+
+这个项目支持用 Supabase Edge Function 调 OpenAI 来优化“我是...”句子。
+
+安全原则：
+
+- 不要把 `OPENAI_API_KEY` 放进 `config.js`。
+- 不要把 `OPENAI_API_KEY` 上传到 GitHub。
+- 前端只调用 `polish-identity` Edge Function。
+- Edge Function 会要求用户先登录 Supabase，减少别人滥用你的 AI 额度。
+
+### 1. 安装并登录 Supabase CLI
+
+```powershell
+supabase login
+supabase link --project-ref 你的-project-ref
+```
+
+`project-ref` 是 Supabase Project URL 里的那段，例如：
+
+```text
+https://aaxzztrtipjklxejylvf.supabase.co
+        ^^^^^^^^^^^^^^^^^^^^
+```
+
+### 2. 设置 OpenAI API key
+
+```powershell
+supabase secrets set OPENAI_API_KEY=你的-openai-api-key
+```
+
+可选：如果你想换模型，可以设置：
+
+```powershell
+supabase secrets set OPENAI_MODEL=gpt-5.2
+```
+
+如果不设置 `OPENAI_MODEL`，Edge Function 默认使用 `gpt-5.2`。
+
+### 3. 部署 Edge Function
+
+```powershell
+supabase functions deploy polish-identity
+```
+
+部署后，在 app 里登录 Supabase，再点 `优化并展开我这句`。
+
+如果 AI 没配置好，app 会显示失败原因，并退回本地备用建议；不会自动保存到历史。
+
 ## 本地打开
 
 如果只是本地看页面，可以直接打开：
@@ -264,6 +313,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\publish-config.ps1
 发布脚本会：
 
 - 检查 `config.js` 是否疑似包含私密 key。
+- stage Supabase Edge Function 代码，但不会上传 `.env`。
 - stage 主要项目文件。
 - commit。
 - pull --rebase。

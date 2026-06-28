@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-28.5";
+const APP_VERSION = "2026-06-28.6";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -730,6 +730,8 @@ async function fetchRichLifeInsights() {
 }
 
 const state = loadState();
+state.evidencePolishLoading = false;
+state.futurePolishLoading = false;
 
 function loadState() {
   try {
@@ -1137,7 +1139,10 @@ function identityTarget(target) {
     textarea: document.querySelector(target === "future" ? "#futureIdentityText" : "#evidenceText"),
     polishRoot: document.querySelector(target === "future" ? "#futurePolishList" : "#evidencePolishList"),
     polishKey: target === "future" ? "futurePolishSpin" : "evidencePolishSpin",
-    polishOpenKey: target === "future" ? "futurePolishOpen" : "evidencePolishOpen"
+    polishOpenKey: target === "future" ? "futurePolishOpen" : "evidencePolishOpen",
+    loadingKey: target === "future" ? "futurePolishLoading" : "evidencePolishLoading",
+    errorKey: target === "future" ? "futurePolishError" : "evidencePolishError",
+    suggestionsKey: target === "future" ? "futureAiSuggestions" : "evidenceAiSuggestions"
   };
 }
 
@@ -1164,10 +1169,18 @@ function renderIdentityHelper(target) {
 
   const note = document.createElement("div");
   note.className = "polish-hint";
-  note.textContent = "下面只根据你写的这一句来修顺和展开；不会保存，也不会引用不明来源。";
+  note.textContent = state[config.loadingKey]
+    ? "AI 正在根据你写的这一句优化，不会自动保存。"
+    : state[config.errorKey] || "优先使用 AI 优化；如果云端 AI 还没配置，会显示本地备用建议。";
   config.polishRoot.append(note);
 
-  identitySuggestions(target).forEach((sentence) => {
+  if (state[config.loadingKey]) return;
+
+  const suggestions = Array.isArray(state[config.suggestionsKey]) && state[config.suggestionsKey].length
+    ? state[config.suggestionsKey]
+    : identitySuggestions(target);
+
+  suggestions.forEach((sentence) => {
     const item = document.createElement("button");
     item.className = "polish-option";
     item.type = "button";
@@ -1181,6 +1194,8 @@ function setIdentityText(target, sentence) {
   const config = identityTarget(target);
   state[config.stateKey] = sentence;
   state[config.polishOpenKey] = false;
+  state[config.suggestionsKey] = [];
+  state[config.errorKey] = "";
   if (config.textarea) config.textarea.value = sentence;
   saveState();
   renderIdentityHelper(target);
@@ -1316,6 +1331,63 @@ function identitySuggestions(target) {
         ];
 
   return pickDailyItems(suggestions.filter(Boolean), 3, offset);
+}
+
+async function generateAiIdentitySuggestions(target) {
+  const config = identityTarget(target);
+  const sentence = cleanIdentityInput(state[config.stateKey]);
+
+  state[config.polishOpenKey] = true;
+  state[config.errorKey] = "";
+  state[config.suggestionsKey] = [];
+
+  if (!sentence) {
+    state[config.errorKey] = "先写一句你自己的“我是...”，我再帮你优化。";
+    saveState();
+    renderIdentityHelper(target);
+    return;
+  }
+
+  if (!supabaseClient || !currentUser) {
+    state[config.errorKey] = "AI 优化需要先登录云端。现在先显示本地备用建议。";
+    saveState();
+    renderIdentityHelper(target);
+    return;
+  }
+
+  state[config.loadingKey] = true;
+  saveState();
+  renderIdentityHelper(target);
+
+  try {
+    const { data, error } = await supabaseClient.functions.invoke("polish-identity", {
+      body: {
+        target,
+        sentence,
+        action: selectedActionText()
+      }
+    });
+
+    if (error) throw error;
+
+    const suggestions = Array.isArray(data?.suggestions)
+      ? data.suggestions.map((item) => cleanIdentityInput(item)).filter(Boolean).slice(0, 5)
+      : [];
+
+    if (!suggestions.length) {
+      throw new Error("AI 没有返回可用句子。");
+    }
+
+    state[config.suggestionsKey] = suggestions;
+    state[config.errorKey] = "";
+  } catch (error) {
+    state[config.errorKey] = `AI 优化暂时不可用：${error.message || "请确认 Edge Function 和 OPENAI_API_KEY 已设置"}。下面先显示本地备用建议。`;
+    state[config.suggestionsKey] = [];
+  } finally {
+    state[config.loadingKey] = false;
+    saveState();
+    renderIdentityHelper(target);
+  }
 }
 
 function renderHistory() {
@@ -1477,6 +1549,8 @@ function bindEvents() {
   document.querySelector("#evidenceText").addEventListener("input", (event) => {
     state.evidence = event.target.value;
     state.evidencePolishOpen = false;
+    state.evidenceAiSuggestions = [];
+    state.evidencePolishError = "";
     saveState();
     renderIdentityHelper("evidence");
   });
@@ -1486,6 +1560,8 @@ function bindEvents() {
     futureIdentityText.addEventListener("input", (event) => {
       state.futureIdentity = event.target.value;
       state.futurePolishOpen = false;
+      state.futureAiSuggestions = [];
+      state.futurePolishError = "";
       saveState();
       renderIdentityHelper("future");
     });
@@ -1496,8 +1572,7 @@ function bindEvents() {
     evidencePolishBtn.addEventListener("click", () => {
       state.evidencePolishOpen = true;
       state.evidencePolishSpin = Number(state.evidencePolishSpin || 0) + 1;
-      saveState();
-      renderIdentityHelper("evidence");
+      generateAiIdentitySuggestions("evidence");
     });
   }
 
@@ -1506,8 +1581,7 @@ function bindEvents() {
     futurePolishBtn.addEventListener("click", () => {
       state.futurePolishOpen = true;
       state.futurePolishSpin = Number(state.futurePolishSpin || 0) + 1;
-      saveState();
-      renderIdentityHelper("future");
+      generateAiIdentitySuggestions("future");
     });
   }
 

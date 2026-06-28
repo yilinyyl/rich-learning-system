@@ -36,7 +36,7 @@ if (-not $remote) {
   Write-Error "No git remote named origin is configured. Add your GitHub repository as origin first."
 }
 
-Invoke-Git @("add", "config.js", "README.md", "REQUIREMENTS.md", "TEST_PLAN.md", "index.html", "app.js", "styles.css", "manifest.json", "sw.js", "icons/icon.svg", ".nojekyll", ".github/workflows/pages.yml", "scripts/publish-config.ps1")
+Invoke-Git @("add", ".gitignore", "config.js", "README.md", "REQUIREMENTS.md", "TEST_PLAN.md", "index.html", "app.js", "styles.css", "manifest.json", "sw.js", "icons/icon.svg", ".nojekyll", ".github/workflows/pages.yml", "scripts/publish-config.ps1", "supabase/functions/polish-identity/index.ts")
 
 $changes = & git diff --cached --name-only
 if (-not $changes) {

@@ -47,7 +47,9 @@ Acceptance criteria:
 
 - App must provide a second-step area for writing an “我是...” sentence.
 - The second-step sentence should be based on the first-step action.
-- App should provide local word choices and only show sentence-polishing suggestions after the user explicitly asks to optimize their own sentence.
+- App should prefer AI sentence-polishing through a Supabase Edge Function after the user explicitly asks to optimize their own sentence.
+- App must keep AI keys out of public frontend files and require Supabase login before calling the AI polishing function.
+- App should fall back to local polishing suggestions if AI polishing is not configured or fails.
 - App must save the sentence locally while the user types.
 - App must keep multiple evidence entries, including multiple entries on the same day.
 - History display should stay lightweight by showing only the latest 3 calendar dates.
@@ -57,8 +59,8 @@ Acceptance criteria:
 
 Acceptance criteria:
 - User can type evidence.
-- User can click a word to fill the evidence field.
-- User can write a sentence, click the optimize button, then choose one polished suggestion for that same field.
+- User can write a sentence, click the optimize button, then choose one AI or fallback polished suggestion for that same field.
+- Clicking optimize or choosing a polished suggestion does not save a history entry by itself.
 - Evidence appears in history.
 - Two different saved sentences from the same day both appear in history.
 - History does not show more than the latest 3 dates.
@@ -70,14 +72,29 @@ Acceptance criteria:
 
 - App must provide a third-step area for writing an “我是...” future identity sentence.
 - The third-step sentence should be based on who the user hopes to become.
-- App should provide local wording support for future identity sentences, with polish suggestions shown only after an explicit optimize click.
+- App should provide AI wording support for future identity sentences, with local fallback suggestions shown only after an explicit optimize click.
 - The saved history entry should include the first-step action, second-step evidence, and third-step future identity.
 
 Acceptance criteria:
 - User can type a future identity sentence.
-- User can use the helper to generate or improve a future identity sentence without sending data to an external AI service.
+- User can use the helper to improve a future identity sentence through the secure Edge Function when logged in.
+- If AI is unavailable, the app clearly says so and shows local fallback suggestions.
 - The future identity appears in history with the same saved entry.
 - Saving and moving to the next action clears the third-step input.
+
+### FR-2C AI Polishing Edge Function
+
+- App should include a Supabase Edge Function named `polish-identity`.
+- The function should read `OPENAI_API_KEY` from Supabase Function secrets, not from GitHub Pages.
+- The function should accept one short sentence starting with “我是”, the target field, and the first-step action.
+- The function should return multiple Chinese suggestions that preserve the original meaning.
+- The function should reject unauthenticated requests.
+
+Acceptance criteria:
+- `supabase/functions/polish-identity/index.ts` exists.
+- The frontend calls `supabaseClient.functions.invoke("polish-identity", ...)`.
+- No real OpenAI key value is present in `config.js`, `app.js`, or committed docs.
+- AI failure does not break the page and does not write to history.
 
 ### FR-3 Cloud Sync
 
