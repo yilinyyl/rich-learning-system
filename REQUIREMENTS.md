@@ -91,12 +91,14 @@ Acceptance criteria:
 - The function should accept one short sentence starting with “我是”, the target field, and the first-step action.
 - The function should return multiple Chinese suggestions that preserve the original meaning.
 - The function should reject unauthenticated requests.
+- The function should reject authenticated users whose email is not listed in the `ALLOWED_EMAILS` secret.
 
 Acceptance criteria:
 - `supabase/functions/polish-identity/index.ts` exists.
 - The frontend calls `supabaseClient.functions.invoke("polish-identity", ...)`.
 - No real OpenRouter key value is present in `config.js`, `app.js`, or committed docs.
 - AI failure does not break the page and does not write to history.
+- If `ALLOWED_EMAILS` is missing or the current email is not allowed, the function returns a clear error instead of calling OpenRouter.
 
 ### FR-3 Cloud Sync
 

@@ -33,6 +33,13 @@ function isSafeHeaderValue(value: string) {
   return /^[\x20-\x7E]+$/.test(value);
 }
 
+function allowedEmails() {
+  return cleanSecret(Deno.env.get("ALLOWED_EMAILS"))
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 function outputText(data: any) {
   if (typeof data?.choices?.[0]?.message?.content === "string") {
     return data.choices[0].message.content;
@@ -119,6 +126,15 @@ Deno.serve(async (req) => {
     const { data: userData, error: userError } = await supabase.auth.getUser();
     if (userError || !userData.user) {
       return jsonResponse({ error: "Login is required for AI polishing." });
+    }
+
+    const allowlist = allowedEmails();
+    const userEmail = String(userData.user.email || "").toLowerCase();
+    if (!allowlist.length) {
+      return jsonResponse({ error: "AI polishing is locked. Please set ALLOWED_EMAILS in Supabase secrets." });
+    }
+    if (!allowlist.includes(userEmail)) {
+      return jsonResponse({ error: "This account is not allowed to use AI polishing." });
     }
 
     const body = (await req.json().catch(() => ({}))) as PolishRequest;

@@ -256,6 +256,7 @@ window.RICH_APP_CONFIG = {
 - 不要把 `OPENROUTER_API_KEY` 上传到 GitHub。
 - 前端只调用 `polish-identity` Edge Function。
 - Edge Function 会要求用户先登录 Supabase，减少别人滥用你的 AI 额度。
+- Edge Function 还会检查 `ALLOWED_EMAILS`，只有白名单里的 email 能用你的 AI key。
 
 ### 1. 安装并登录 Supabase CLI
 
@@ -285,7 +286,23 @@ npx supabase secrets set OPENROUTER_MODEL=openrouter/free
 
 如果不设置 `OPENROUTER_MODEL`，Edge Function 默认使用 `openrouter/free`。
 
-### 3. 部署 Edge Function
+### 3. 设置允许使用 AI 的 email
+
+把 `你的登录email@example.com` 换成你自己登录 app 的 Supabase email：
+
+```powershell
+npx supabase secrets set ALLOWED_EMAILS=你的登录email@example.com
+```
+
+如果以后要允许多个账号，用英文逗号分隔：
+
+```powershell
+npx supabase secrets set ALLOWED_EMAILS=you@example.com,another@example.com
+```
+
+重要：如果没有设置 `ALLOWED_EMAILS`，AI 优化会被锁住。
+
+### 4. 部署 Edge Function
 
 ```powershell
 npx supabase functions deploy polish-identity
