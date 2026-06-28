@@ -412,6 +412,16 @@ h2 {
   font-weight: 700;
 }
 
+.polish-hint {
+  padding: 10px 11px;
+  border: 1px solid rgba(234, 216, 168, 0.2);
+  border-radius: 8px;
+  background: rgba(8, 20, 14, 0.4);
+  color: var(--muted);
+  line-height: 1.5;
+  font-size: 14px;
+}
+
 .polish-option:hover,
 .word-chip:hover,
 .mini-button:hover {

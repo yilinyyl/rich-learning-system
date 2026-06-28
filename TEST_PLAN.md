@@ -67,13 +67,15 @@ Expected result:
 Steps:
 1. Open the second-step evidence field.
 2. Click one word chip.
-3. Click “帮我优化这句”.
-4. Choose one polished sentence.
-5. Repeat the same flow in the third-step future identity field.
+3. Confirm polished suggestions are not shown until the optimize button is clicked.
+4. Type one custom “我是...” sentence.
+5. Click “优化我写的这句”.
+6. Choose one polished sentence.
+7. Repeat the same flow in the third-step future identity field.
 
 Expected result:
 - The selected word fills the correct field.
-- Polished suggestions are shown locally.
+- Polished suggestions are shown locally only after the optimize click.
 - Choosing a polished sentence replaces the correct field.
 - The helper does not require an external AI API call.
 

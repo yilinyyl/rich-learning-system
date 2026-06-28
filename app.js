@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-28.1";
+const APP_VERSION = "2026-06-28.2";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -1076,7 +1076,8 @@ function identityTarget(target) {
     wordRoot: document.querySelector(target === "future" ? "#futureWordBank" : "#evidenceWordBank"),
     polishRoot: document.querySelector(target === "future" ? "#futurePolishList" : "#evidencePolishList"),
     spinKey: target === "future" ? "futureWordSpin" : "evidenceWordSpin",
-    polishKey: target === "future" ? "futurePolishSpin" : "evidencePolishSpin"
+    polishKey: target === "future" ? "futurePolishSpin" : "evidencePolishSpin",
+    polishOpenKey: target === "future" ? "futurePolishOpen" : "evidencePolishOpen"
   };
 }
 
@@ -1102,6 +1103,17 @@ function renderIdentityHelper(target) {
   });
 
   config.polishRoot.innerHTML = "";
+  config.polishRoot.hidden = !state[config.polishOpenKey];
+  if (!state[config.polishOpenKey]) return;
+
+  if (!cleanIdentityInput(state[config.stateKey])) {
+    const hint = document.createElement("div");
+    hint.className = "polish-hint";
+    hint.textContent = "先写一句你自己的“我是...”，我再帮你优化。";
+    config.polishRoot.append(hint);
+    return;
+  }
+
   identitySuggestions(target).forEach((sentence) => {
     const item = document.createElement("button");
     item.className = "polish-option";
@@ -1115,6 +1127,7 @@ function renderIdentityHelper(target) {
 function setIdentityText(target, sentence) {
   const config = identityTarget(target);
   state[config.stateKey] = sentence;
+  state[config.polishOpenKey] = false;
   if (config.textarea) config.textarea.value = sentence;
   saveEvidenceHistory();
   saveState();
@@ -1280,6 +1293,7 @@ function bindEvents() {
 
   document.querySelector("#evidenceText").addEventListener("input", (event) => {
     state.evidence = event.target.value;
+    state.evidencePolishOpen = false;
     saveEvidenceHistory();
     saveState();
     renderIdentityHelper("evidence");
@@ -1290,6 +1304,7 @@ function bindEvents() {
   if (futureIdentityText) {
     futureIdentityText.addEventListener("input", (event) => {
       state.futureIdentity = event.target.value;
+      state.futurePolishOpen = false;
       saveEvidenceHistory();
       saveState();
       renderIdentityHelper("future");
@@ -1318,6 +1333,7 @@ function bindEvents() {
   const evidencePolishBtn = document.querySelector("#evidencePolishBtn");
   if (evidencePolishBtn) {
     evidencePolishBtn.addEventListener("click", () => {
+      state.evidencePolishOpen = true;
       state.evidencePolishSpin = Number(state.evidencePolishSpin || 0) + 1;
       saveState();
       renderIdentityHelper("evidence");
@@ -1327,6 +1343,7 @@ function bindEvents() {
   const futurePolishBtn = document.querySelector("#futurePolishBtn");
   if (futurePolishBtn) {
     futurePolishBtn.addEventListener("click", () => {
+      state.futurePolishOpen = true;
       state.futurePolishSpin = Number(state.futurePolishSpin || 0) + 1;
       saveState();
       renderIdentityHelper("future");
