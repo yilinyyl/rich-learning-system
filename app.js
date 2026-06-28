@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-28.8";
+const APP_VERSION = "2026-06-28.9";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -1360,7 +1360,16 @@ async function generateAiIdentitySuggestions(target) {
   renderIdentityHelper(target);
 
   try {
+    const { data: sessionData } = await supabaseClient.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+    if (!accessToken) {
+      throw new Error("登录状态已过期，请先重新登录 Supabase。");
+    }
+
     const { data, error } = await supabaseClient.functions.invoke("polish-identity", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      },
       body: {
         target,
         sentence,
