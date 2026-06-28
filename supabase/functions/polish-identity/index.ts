@@ -47,6 +47,18 @@ function extractJson(text: string) {
   }
 }
 
+function extractIdentityLines(text: string) {
+  return String(text || "")
+    .split(/\r?\n|(?=我是)/)
+    .map((line) =>
+      line
+        .replace(/^[-*\d.、\s]+/, "")
+        .replace(/^["“”']+|["“”']+$/g, "")
+        .trim()
+    )
+    .filter((line) => line.startsWith("我是"));
+}
+
 function normalizeSuggestions(items: unknown[], original: string) {
   const seen = new Set<string>();
 
@@ -75,7 +87,7 @@ Deno.serve(async (req) => {
   try {
     const openRouterKey = Deno.env.get("OPENROUTER_API_KEY");
     if (!openRouterKey) {
-      return jsonResponse({ error: "OPENROUTER_API_KEY is not configured." }, 500);
+      return jsonResponse({ error: "OPENROUTER_API_KEY is not configured." });
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -83,7 +95,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization") || "";
 
     if (!supabaseUrl || !supabaseAnonKey || !authHeader) {
-      return jsonResponse({ error: "Login is required for AI polishing." }, 401);
+      return jsonResponse({ error: "Login is required for AI polishing." });
     }
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -92,7 +104,7 @@ Deno.serve(async (req) => {
 
     const { data: userData, error: userError } = await supabase.auth.getUser();
     if (userError || !userData.user) {
-      return jsonResponse({ error: "Login is required for AI polishing." }, 401);
+      return jsonResponse({ error: "Login is required for AI polishing." });
     }
 
     const body = (await req.json().catch(() => ({}))) as PolishRequest;
@@ -101,7 +113,7 @@ Deno.serve(async (req) => {
     const target = body.target === "future" ? "future" : "evidence";
 
     if (!sentence.startsWith("我是") || sentence.length > 180) {
-      return jsonResponse({ error: "Please send one short sentence starting with 我是." }, 400);
+      return jsonResponse({ error: "Please send one short sentence starting with 我是." });
     }
 
     const task =
@@ -119,7 +131,8 @@ Deno.serve(async (req) => {
 - 不要夸张承诺，不要写玄学保证，不要写“一定会发财”。
 - 语气：温柔、清楚、有力量、适合个人成长和显化练习。
 - 返回 4 句，每句 35-95 个中文字。
-- 只返回 JSON：{"suggestions":["...","...","...","..."]}
+- 优先只返回 JSON：{"suggestions":["...","...","...","..."]}
+- 如果模型不能返回 JSON，就每行返回一句，不要加解释。
 
 任务：${task}
 用户原句：${sentence}
@@ -132,7 +145,7 @@ Deno.serve(async (req) => {
         Authorization: `Bearer ${openRouterKey}`,
         "Content-Type": "application/json",
         "HTTP-Referer": Deno.env.get("APP_URL") || "https://yilinyyl.github.io/rich-learning-system/",
-        "X-Title": "Rich Learning System"
+        "X-OpenRouter-Title": "Rich Learning System"
       },
       body: JSON.stringify({
         model: Deno.env.get("OPENROUTER_MODEL") || "openrouter/free",
@@ -142,25 +155,32 @@ Deno.serve(async (req) => {
             content: prompt
           }
         ],
-        max_tokens: 700,
-        response_format: { type: "json_object" }
+        max_tokens: 700
       })
     });
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      return jsonResponse({ error: data?.error?.message || "OpenRouter request failed." }, 502);
+      return jsonResponse({ error: data?.error?.message || "OpenRouter request failed." });
     }
 
-    const parsed = extractJson(outputText(data));
-    const suggestions = normalizeSuggestions(Array.isArray(parsed?.suggestions) ? parsed.suggestions : [], sentence);
+    const text = outputText(data);
+    let rawSuggestions: unknown[] = [];
+    try {
+      const parsed = extractJson(text);
+      rawSuggestions = Array.isArray(parsed?.suggestions) ? parsed.suggestions : [];
+    } catch {
+      rawSuggestions = extractIdentityLines(text);
+    }
+
+    const suggestions = normalizeSuggestions(rawSuggestions, sentence);
 
     if (!suggestions.length) {
-      return jsonResponse({ error: "AI did not return usable suggestions." }, 502);
+      return jsonResponse({ error: "AI did not return usable suggestions." });
     }
 
     return jsonResponse({ suggestions });
   } catch (error) {
-    return jsonResponse({ error: error instanceof Error ? error.message : "AI polishing failed." }, 500);
+    return jsonResponse({ error: error instanceof Error ? error.message : "AI polishing failed." });
   }
 });

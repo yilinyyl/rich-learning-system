@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-28.7";
+const APP_VERSION = "2026-06-28.8";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -1369,6 +1369,7 @@ async function generateAiIdentitySuggestions(target) {
     });
 
     if (error) throw error;
+    if (data?.error) throw new Error(data.error);
 
     const suggestions = Array.isArray(data?.suggestions)
       ? data.suggestions.map((item) => cleanIdentityInput(item)).filter(Boolean).slice(0, 5)
