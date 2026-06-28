@@ -348,51 +348,14 @@ h2 {
     rgba(9, 23, 16, 0.38);
 }
 
-.identity-helper-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  color: var(--cream);
-  font-size: 13px;
-  font-weight: 900;
-}
-
-.mini-button,
-.word-chip,
 .polish-option {
   width: auto;
   margin-top: 0;
   box-shadow: none;
 }
 
-.mini-button {
-  flex: 0 0 auto;
-  padding: 7px 10px;
-  border: 1px solid rgba(234, 216, 168, 0.24);
-  background: rgba(7, 24, 16, 0.6);
-  color: var(--cream);
-  font-size: 12px;
-}
-
-.word-bank {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  margin-top: 10px;
-}
-
-.word-chip {
-  padding: 7px 10px;
-  border: 1px solid rgba(167, 234, 214, 0.28);
-  border-radius: 999px;
-  background: rgba(42, 78, 58, 0.55);
-  color: var(--cream);
-  font-size: 13px;
-}
-
 .helper-button {
-  margin-top: 11px;
+  margin-top: 0;
 }
 
 .polish-list {
@@ -422,9 +385,7 @@ h2 {
   font-size: 14px;
 }
 
-.polish-option:hover,
-.word-chip:hover,
-.mini-button:hover {
+.polish-option:hover {
   background: rgba(55, 96, 72, 0.78);
 }
 

@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-28.3";
+const APP_VERSION = "2026-06-28.4";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -75,14 +75,6 @@ const extraExamples = [
   "我是一个让钱变清楚的人，所以我今天记录了一笔钱。",
   "我是一个尊重真实需求的人，所以我今天问了一个真实问题。",
   "我是一个保护注意力的人，所以我今天练习了专注，没有让手机拿走我的注意力。"
-];
-
-const identityWords = [
-  "自由", "丰盛", "稳定", "清醒", "温柔而坚定", "有选择权", "被支持", "值得被爱",
-  "优雅", "有气质", "有能量", "有创造力", "有行动力", "越来越富足", "越来越松弛", "越来越勇敢",
-  "会照顾自己", "会接住机会", "会管理金钱", "会保护时间", "会学习", "会表达", "会创造价值", "会被好运看见",
-  "内心安定", "身体健康", "头脑清楚", "生活有秩序", "收入越来越稳定", "被贵人支持", "有高质量关系", "有长期眼光",
-  "值得拥有好生活", "允许自己成功", "允许自己收钱", "允许自己被帮助", "慢慢变有钱", "慢慢变强大", "慢慢变漂亮", "慢慢变自由"
 ];
 
 const identityFallbacks = {
@@ -1116,19 +1108,15 @@ function setActionText(sentence) {
   state.actionPolishOpen = false;
   const customActionText = document.querySelector("#customActionText");
   if (customActionText) customActionText.value = sentence;
-  saveEvidenceHistory();
   saveState();
   renderActionHelper();
-  renderHistory();
 }
 
 function identityTarget(target) {
   return {
     stateKey: target === "future" ? "futureIdentity" : "evidence",
     textarea: document.querySelector(target === "future" ? "#futureIdentityText" : "#evidenceText"),
-    wordRoot: document.querySelector(target === "future" ? "#futureWordBank" : "#evidenceWordBank"),
     polishRoot: document.querySelector(target === "future" ? "#futurePolishList" : "#evidencePolishList"),
-    spinKey: target === "future" ? "futureWordSpin" : "evidenceWordSpin",
     polishKey: target === "future" ? "futurePolishSpin" : "evidencePolishSpin",
     polishOpenKey: target === "future" ? "futurePolishOpen" : "evidencePolishOpen"
   };
@@ -1141,19 +1129,7 @@ function renderIdentityHelpers() {
 
 function renderIdentityHelper(target) {
   const config = identityTarget(target);
-  if (!config.wordRoot || !config.polishRoot) return;
-
-  config.wordRoot.innerHTML = "";
-  pickDailyItems(identityWords, 8, Number(state[config.spinKey] || 0) + (target === "future" ? 5 : 0)).forEach((word) => {
-    const chip = document.createElement("button");
-    chip.className = "word-chip";
-    chip.type = "button";
-    chip.textContent = word;
-    chip.addEventListener("click", () => {
-      setIdentityText(target, `我是一个${word}的人。`);
-    });
-    config.wordRoot.append(chip);
-  });
+  if (!config.polishRoot) return;
 
   config.polishRoot.innerHTML = "";
   config.polishRoot.hidden = !state[config.polishOpenKey];
@@ -1182,10 +1158,8 @@ function setIdentityText(target, sentence) {
   state[config.stateKey] = sentence;
   state[config.polishOpenKey] = false;
   if (config.textarea) config.textarea.value = sentence;
-  saveEvidenceHistory();
   saveState();
   renderIdentityHelper(target);
-  renderHistory();
 }
 
 function identityCore(text, target) {
@@ -1213,26 +1187,48 @@ function shortActionText() {
   return selectedActionText().replace(/[。.!！?？]+$/g, "").slice(0, 38);
 }
 
+function identityInspiration(target) {
+  const bookLine = activeWereadHighlights()[Number(state.bookSpin || 0) % Math.max(activeWereadHighlights().length, 1)]?.text || "";
+  const onlineLine = onlineKeyPoints()[Number(state.onlineSpin || 0) % Math.max(onlineKeyPoints().length, 1)]?.text || "";
+  const richLine = richLifeLines()[Number(state.richLifeSpin || 0) % Math.max(richLifeLines().length, 1)] || "";
+  const source = target === "future" ? richLine || bookLine || onlineLine : bookLine || onlineLine || richLine;
+  return cleanBookHighlight(source, 64).replace(/[。.!！?？]+$/g, "");
+}
+
+function identityTheme(core) {
+  if (/钱|富|收入|资产|自由|丰盛|选择/.test(core)) return "财富和自由";
+  if (/学|语言|书|知识|表达|AI|课程/.test(core)) return "学习和成长";
+  if (/漂亮|气质|优雅|关系|爱|吸引/.test(core)) return "气质、关系和吸引力";
+  if (/健康|身体|瑜伽|冥想|运动|睡/.test(core)) return "身心状态";
+  if (/勇敢|尝试|行动|坚持|创造/.test(core)) return "行动和创造";
+  return "生活质量";
+}
+
 function identitySuggestions(target) {
   const config = identityTarget(target);
   const raw = state[config.stateKey] || "";
+  const original = cleanIdentityInput(raw);
   const core = identityCore(raw, target);
   const noun = identityNoun(core);
   const action = shortActionText();
+  const inspiration = identityInspiration(target);
+  const theme = identityTheme(core);
   const offset = Number(state[config.polishKey] || 0);
   const suggestions =
     target === "future"
       ? [
-          `我是一个${noun}，我的生活正在变得更自由、更丰盛、更被支持。`,
-          "我是一个值得被支持、也值得越来越丰盛的人，我允许机会、金钱和贵人慢慢靠近我。",
-          `我是一个${noun}，我有时间、有健康、有选择，也有能力照顾自己喜欢的人。`,
-          `我是一个正在成为${noun}的人，我的每一天都在靠近更优雅、更富足的生活。`
+          `${original} 这不是一句口号，而是我正在练习的生活方向：我开始允许自己拥有更多时间、更多选择、更多支持。`,
+          `我是一个正在成为${noun}的人。我的${theme}会越来越清楚，我会用稳定的小行动，把这个身份慢慢活出来。`,
+          `我是一个${noun}。我不需要急着证明自己，我只需要每天靠近一点点：更有能力、更有余裕，也更会照顾自己。`,
+          `我是一个值得过好生活的人。我可以拥有安静的家、健康的身体、自由的旅行、清楚的钱，以及让我持续成长的环境。`,
+          inspiration ? `我是一个会把好知识变成生活的人。今天这句话提醒我：${inspiration}。所以我允许自己继续变得更自由、更丰盛。` : `我是一个${noun}，我正在把愿景从想象变成可以被我亲手建起来的生活。`
         ]
       : [
-          `我是一个${noun}，所以我今天已经用一个小行动证明了这一点。`,
-          `我是一个正在练习${core}的人，我允许自己从今天这一步开始。`,
-          `我是一个${noun}，我刚刚完成了：${action}。`,
-          `我是一个会把愿望变成行动证据的人，所以我今天没有只停留在想象里。`
+          `${original} 我不是在等自己突然变厉害，我是在用今天这个小动作，让这个身份有一点真实证据。`,
+          `我是一个正在练习${core}的人。刚刚这一步虽然小，但它代表我没有只停留在想象里：${action}。`,
+          `我是一个${noun}。我愿意把${theme}变成每天看得见的小证据，而不是只在心里想一想。`,
+          `我是一个会慢慢累积的人。今天我完成的不是一件大事，而是一颗很小、但会继续长大的种子：${action}。`,
+          inspiration ? `我是一个会从知识里拿回行动力的人。${inspiration}；而我今天先从这一小步开始。` : `我是一个${noun}，所以我今天选择先完成一件真实、具体、不会压垮自己的小事。`
         ];
 
   return pickDailyItems(suggestions, 3, offset);
@@ -1358,7 +1354,6 @@ function bindEvents() {
     suggestedActionBtn.addEventListener("click", () => {
       state.customAction = currentAction().title;
       state.actionPolishOpen = false;
-      saveEvidenceHistory();
       saveState();
       render();
     });
@@ -1368,7 +1363,6 @@ function bindEvents() {
     button.addEventListener("click", () => {
       state.customAction = button.dataset.action || button.textContent.trim();
       state.actionPolishOpen = false;
-      saveEvidenceHistory();
       saveState();
       render();
     });
@@ -1379,10 +1373,8 @@ function bindEvents() {
     customActionText.addEventListener("input", (event) => {
       state.customAction = event.target.value;
       state.actionPolishOpen = false;
-      saveEvidenceHistory();
       saveState();
       renderActionHelper();
-      renderHistory();
     });
   }
 
@@ -1399,10 +1391,8 @@ function bindEvents() {
   document.querySelector("#evidenceText").addEventListener("input", (event) => {
     state.evidence = event.target.value;
     state.evidencePolishOpen = false;
-    saveEvidenceHistory();
     saveState();
     renderIdentityHelper("evidence");
-    renderHistory();
   });
 
   const futureIdentityText = document.querySelector("#futureIdentityText");
@@ -1410,26 +1400,6 @@ function bindEvents() {
     futureIdentityText.addEventListener("input", (event) => {
       state.futureIdentity = event.target.value;
       state.futurePolishOpen = false;
-      saveEvidenceHistory();
-      saveState();
-      renderIdentityHelper("future");
-      renderHistory();
-    });
-  }
-
-  const evidenceWordsBtn = document.querySelector("#evidenceWordsBtn");
-  if (evidenceWordsBtn) {
-    evidenceWordsBtn.addEventListener("click", () => {
-      state.evidenceWordSpin = Number(state.evidenceWordSpin || 0) + 7;
-      saveState();
-      renderIdentityHelper("evidence");
-    });
-  }
-
-  const futureWordsBtn = document.querySelector("#futureWordsBtn");
-  if (futureWordsBtn) {
-    futureWordsBtn.addEventListener("click", () => {
-      state.futureWordSpin = Number(state.futureWordSpin || 0) + 7;
       saveState();
       renderIdentityHelper("future");
     });
