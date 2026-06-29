@@ -66,23 +66,65 @@ function extractJson(text: string) {
 }
 
 function extractIdentityLines(text: string) {
-  return String(text || "")
-    .split(/\r?\n|(?=我是)/)
+  const source = String(text || "")
+    .replace(/```json|```/g, "")
+    .replace(/[“”]/g, "\"");
+
+  return source
+    .split(/\r?\n|(?=我是)|(?=\d+[.、]\s*)/)
     .map((line) =>
       line
         .replace(/^[-*\d.、\s]+/, "")
         .replace(/^["“”']+|["“”']+$/g, "")
+        .replace(/^suggestions?\s*[:：]\s*/i, "")
         .trim()
     )
-    .filter((line) => line.startsWith("我是"));
+    .filter(Boolean);
+}
+
+function ensureSentence(text: string) {
+  const value = text.replace(/\s+/g, " ").trim();
+  if (!value) return "";
+  return /[。.!！?？]$/.test(value) ? value : `${value}。`;
+}
+
+function fallbackSuggestions(original: string, target: "action" | "evidence" | "future") {
+  const base = original.replace(/[。.!！?？]+$/g, "").trim();
+  if (!base) return [];
+
+  if (target === "action") {
+    return [
+      `我刚刚完成了：${base}。`,
+      `我用 5 到 10 分钟认真做了这件小事：${base}。`,
+      `我把今天的成长落到一个具体行动上：${base}。`
+    ];
+  }
+
+  const identity = base.startsWith("我是") ? base : `我是一个正在练习的人，${base}`;
+  return [
+    ensureSentence(identity),
+    `${identity}，我允许自己从今天这个小动作开始慢慢变得更稳定。`,
+    `${identity}，我正在把愿望变成看得见的行动证据。`
+  ];
 }
 
 function normalizeSuggestions(items: unknown[], original: string, target: "action" | "evidence" | "future") {
   const seen = new Set<string>();
 
-  return items
+  const normalized = items
     .map((item) => String(item || "").replace(/\s+/g, " ").trim())
-    .filter((item) => (target === "action" ? !item.startsWith("我是") : item.startsWith("我是")))
+    .map((item) =>
+      item
+        .replace(/^[-*\d.、\s]+/, "")
+        .replace(/^["“”']+|["“”']+$/g, "")
+        .replace(/^suggestions?\s*[:：]\s*/i, "")
+        .trim()
+    )
+    .map((item) => {
+      if (target === "action") return item.replace(/^我是一个?/, "我");
+      return item.startsWith("我是") ? item : `我是${item.startsWith("一个") ? "" : "一个"}${item}`;
+    })
+    .map(ensureSentence)
     .filter((item) => item.length >= (target === "action" ? 6 : 8) && item.length <= 180)
     .filter((item) => {
       const key = item.replace(/[，。,.!?！？\s]/g, "");
@@ -91,6 +133,8 @@ function normalizeSuggestions(items: unknown[], original: string, target: "actio
       return true;
     })
     .slice(0, 5);
+
+  return normalized.length ? normalized : fallbackSuggestions(original, target);
 }
 
 Deno.serve(async (req) => {
