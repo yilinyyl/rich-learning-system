@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-28.10";
+const APP_VERSION = "2026-06-29.1";
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -1397,20 +1397,24 @@ function identitySuggestions(target) {
   const expansions = identityExpansionSet(theme, target);
   const base = withoutFinalPunctuation(original);
   const offset = Number(state[config.polishKey] || 0);
+
+  if (target === "evidence") {
+    const evidenceSuggestions = [
+      original,
+      `${base}，因为我今天已经完成了一个真实的小行动：${action}。`,
+      `${base}，所以我用今天做过的事给自己一个具体证据。`,
+      `${base}，我不是只在想象，我刚刚确实做了：${action}。`
+    ];
+    return pickDailyItems(evidenceSuggestions.filter(Boolean), 3, offset);
+  }
+
   const suggestions =
-    target === "future"
-      ? [
-          original,
-          `${base}，${expansions[0]}`,
-          `${base}，${expansions[1]}`,
-          `${base}，${expansions[2]}`
-        ]
-      : [
-          original,
-          `${base}，所以我今天先完成了一个真实的小动作：${action}。`,
-          `${base}，${expansions[0]}`,
-          `${base}，${expansions[1]}`
-        ];
+    [
+      original,
+      `${base}，${expansions[0]}`,
+      `${base}，${expansions[1]}`,
+      `${base}，${expansions[2]}`
+    ];
 
   return pickDailyItems(suggestions.filter(Boolean), 3, offset);
 }

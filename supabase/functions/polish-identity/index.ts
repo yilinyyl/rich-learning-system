@@ -101,6 +101,14 @@ function fallbackSuggestions(original: string, target: "action" | "evidence" | "
   }
 
   const identity = base.startsWith("我是") ? base : `我是一个正在练习的人，${base}`;
+  if (target === "evidence") {
+    return [
+      ensureSentence(identity),
+      `${identity}，因为我今天已经完成了一个真实的小行动。`,
+      `${identity}，所以我用今天做过的事给自己一个具体证据。`
+    ];
+  }
+
   return [
     ensureSentence(identity),
     `${identity}，我允许自己从今天这个小动作开始慢慢变得更稳定。`,
@@ -199,12 +207,14 @@ Deno.serve(async (req) => {
         ? "把这句第一步行动优化成更清楚、更具体、更容易执行的中文句子。"
         : target === "future"
         ? "把这句未来身份显化句优化成更自然、更贴近原意、更容易想象的中文句子。"
-        : "把这句行动证据优化成更自然、更贴近原意、更具体的中文句子。";
+        : "把这句第二步行动证据优化成更自然、更贴近第一步、更像今天已经发生的证据。";
 
     const formatRule =
       target === "action"
         ? "- 第一结果必须是行动句，不要以“我是”开头。\n- 每一句都要说清楚用户刚刚做了什么，适合放在“第一步”。"
-        : "- 每一句都必须以“我是”开头。";
+        : target === "evidence"
+        ? "- 每一句都必须以“我是”开头。\n- 每一句都必须贴近第一步行动，表达“我今天做了这件小事，所以这证明我是怎样的人”。\n- 不要写未来愿景，不要写“我允许...”，不要写“我会...”，不要写豪华生活画面。"
+        : "- 每一句都必须以“我是”开头。\n- 可以更有愿景、更自由、更适合显化练习。";
 
     const prompt = `
 你是一个中文写作助手，任务是优化用户写下的一句成长记录。
