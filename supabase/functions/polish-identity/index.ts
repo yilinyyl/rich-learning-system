@@ -6,6 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS"
 };
 
+const OPENROUTER_TIMEOUT_MS = 16000;
+
 type PolishRequest = {
   target?: "action" | "evidence" | "future";
   sentence?: string;
@@ -234,8 +236,12 @@ ${formatRule}
 第一步行动：${action || "未填写"}
 `;
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), OPENROUTER_TIMEOUT_MS);
+
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
+      signal: controller.signal,
       headers: {
         Authorization: `Bearer ${openRouterKey}`,
         "Content-Type": "application/json"
@@ -248,9 +254,11 @@ ${formatRule}
             content: prompt
           }
         ],
-        max_tokens: 700
+        max_tokens: 420,
+        temperature: 0.7
       })
     });
+    clearTimeout(timeoutId);
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -274,6 +282,12 @@ ${formatRule}
 
     return jsonResponse({ suggestions });
   } catch (error) {
-    return jsonResponse({ error: error instanceof Error ? error.message : "AI polishing failed." });
+    const message =
+      error instanceof DOMException && error.name === "AbortError"
+        ? "OpenRouter request timed out. Please try again."
+        : error instanceof Error
+        ? error.message
+        : "AI polishing failed.";
+    return jsonResponse({ error: message });
   }
 });

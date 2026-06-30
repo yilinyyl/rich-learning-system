@@ -1,5 +1,8 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-29.1";
+const APP_VERSION = "2026-06-30.1";
+const POLISH_MAX_ATTEMPTS = 3;
+const POLISH_TIMEOUT_MS = 18000;
+const POLISH_RETRY_DELAY_MS = 900;
 let deferredInstallPrompt = null;
 let onlineInsights = [];
 let richLifeInsights = [];
@@ -733,6 +736,9 @@ const state = loadState();
 state.evidencePolishLoading = false;
 state.futurePolishLoading = false;
 state.actionPolishLoading = false;
+state.evidencePolishAttempt = 0;
+state.futurePolishAttempt = 0;
+state.actionPolishAttempt = 0;
 
 function loadState() {
   try {
@@ -1068,6 +1074,8 @@ function render() {
 
 function renderActionHelper() {
   const root = document.querySelector("#actionPolishList");
+  const actionPolishBtn = document.querySelector("#actionPolishBtn");
+  if (actionPolishBtn) actionPolishBtn.disabled = Boolean(state.actionPolishLoading);
   if (!root) return;
   root.innerHTML = "";
   root.hidden = !state.actionPolishOpen;
@@ -1084,8 +1092,9 @@ function renderActionHelper() {
 
   const note = document.createElement("div");
   note.className = "polish-hint";
+  const actionAttempt = Number(state.actionPolishAttempt || 1);
   note.textContent = state.actionPolishLoading
-    ? "AI 正在根据你写的第一步优化，不会自动保存。"
+    ? `AI 正在优化第一步，第 ${actionAttempt}/${POLISH_MAX_ATTEMPTS} 次尝试。请等它自己完成，不会自动保存。`
     : state.actionPolishError || "优先使用 AI 优化第一步；如果云端 AI 暂时不可用，会显示本地备用建议。";
   root.append(note);
 
@@ -1149,7 +1158,58 @@ function setActionText(sentence) {
   renderActionChoices();
 }
 
-async function invokePolishFunction(body) {
+async function invokePolishFunction(body, onAttempt) {
+  return invokePolishFunctionWithRetry(body, onAttempt);
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function timeoutError(ms) {
+  return new Promise((_, reject) => {
+    setTimeout(() => reject(new Error(`AI 请求超过 ${Math.round(ms / 1000)} 秒没有回应`)), ms);
+  });
+}
+
+function isPolishRetryable(error) {
+  const message = String(error?.message || error || "").toLowerCase();
+  if (!message) return true;
+  return ![
+    "login",
+    "登录",
+    "allowed",
+    "allowlist",
+    "locked",
+    "not configured",
+    "invalid characters",
+    "please send",
+    "openrouter_api_key"
+  ].some((text) => message.includes(text));
+}
+
+async function invokePolishFunctionWithRetry(body, onAttempt) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= POLISH_MAX_ATTEMPTS; attempt += 1) {
+    if (typeof onAttempt === "function") onAttempt(attempt, POLISH_MAX_ATTEMPTS);
+
+    try {
+      return await Promise.race([
+        invokePolishFunctionOnce(body),
+        timeoutError(POLISH_TIMEOUT_MS)
+      ]);
+    } catch (error) {
+      lastError = error;
+      if (!isPolishRetryable(error) || attempt === POLISH_MAX_ATTEMPTS) break;
+      await wait(POLISH_RETRY_DELAY_MS * attempt);
+    }
+  }
+
+  throw lastError || new Error("AI 优化暂时不可用。");
+}
+
+async function invokePolishFunctionOnce(body) {
   if (!supabaseClient || !currentUser) {
     throw new Error("AI 优化需要先登录云端。");
   }
@@ -1186,15 +1246,23 @@ async function generateAiActionSuggestions() {
   }
 
   state.actionPolishLoading = true;
+  state.actionPolishAttempt = 0;
   saveState();
   renderActionHelper();
 
   try {
-    const data = await invokePolishFunction({
-      target: "action",
-      sentence: action,
-      action
-    });
+    const data = await invokePolishFunction(
+      {
+        target: "action",
+        sentence: action,
+        action
+      },
+      (attempt) => {
+        state.actionPolishAttempt = attempt;
+        saveState();
+        renderActionHelper();
+      }
+    );
     const suggestions = Array.isArray(data?.suggestions)
       ? data.suggestions.map((item) => String(item || "").replace(/\s+/g, " ").trim()).filter(Boolean).slice(0, 5)
       : [];
@@ -1210,6 +1278,7 @@ async function generateAiActionSuggestions() {
     state.actionAiSuggestions = [];
   } finally {
     state.actionPolishLoading = false;
+    state.actionPolishAttempt = 0;
     saveState();
     renderActionHelper();
   }
@@ -1223,6 +1292,7 @@ function identityTarget(target) {
     polishKey: target === "future" ? "futurePolishSpin" : "evidencePolishSpin",
     polishOpenKey: target === "future" ? "futurePolishOpen" : "evidencePolishOpen",
     loadingKey: target === "future" ? "futurePolishLoading" : "evidencePolishLoading",
+    attemptKey: target === "future" ? "futurePolishAttempt" : "evidencePolishAttempt",
     errorKey: target === "future" ? "futurePolishError" : "evidencePolishError",
     suggestionsKey: target === "future" ? "futureAiSuggestions" : "evidenceAiSuggestions"
   };
@@ -1235,6 +1305,8 @@ function renderIdentityHelpers() {
 
 function renderIdentityHelper(target) {
   const config = identityTarget(target);
+  const polishButton = document.querySelector(target === "future" ? "#futurePolishBtn" : "#evidencePolishBtn");
+  if (polishButton) polishButton.disabled = Boolean(state[config.loadingKey]);
   if (!config.polishRoot) return;
 
   config.polishRoot.innerHTML = "";
@@ -1251,8 +1323,9 @@ function renderIdentityHelper(target) {
 
   const note = document.createElement("div");
   note.className = "polish-hint";
+  const attempt = Number(state[config.attemptKey] || 1);
   note.textContent = state[config.loadingKey]
-    ? "AI 正在根据你写的这一句优化，不会自动保存。"
+    ? `AI 正在优化这一句，第 ${attempt}/${POLISH_MAX_ATTEMPTS} 次尝试。请等它自己完成，不会自动保存。`
     : state[config.errorKey] || "优先使用 AI 优化；如果云端 AI 还没配置，会显示本地备用建议。";
   config.polishRoot.append(note);
 
@@ -1442,15 +1515,23 @@ async function generateAiIdentitySuggestions(target) {
   }
 
   state[config.loadingKey] = true;
+  state[config.attemptKey] = 0;
   saveState();
   renderIdentityHelper(target);
 
   try {
-    const data = await invokePolishFunction({
-      target,
-      sentence,
-      action: selectedActionText()
-    });
+    const data = await invokePolishFunction(
+      {
+        target,
+        sentence,
+        action: selectedActionText()
+      },
+      (attempt) => {
+        state[config.attemptKey] = attempt;
+        saveState();
+        renderIdentityHelper(target);
+      }
+    );
 
     const suggestions = Array.isArray(data?.suggestions)
       ? data.suggestions.map((item) => cleanIdentityInput(item)).filter(Boolean).slice(0, 5)
@@ -1467,6 +1548,7 @@ async function generateAiIdentitySuggestions(target) {
     state[config.suggestionsKey] = [];
   } finally {
     state[config.loadingKey] = false;
+    state[config.attemptKey] = 0;
     saveState();
     renderIdentityHelper(target);
   }
@@ -1656,6 +1738,7 @@ function bindEvents() {
   const actionPolishBtn = document.querySelector("#actionPolishBtn");
   if (actionPolishBtn) {
     actionPolishBtn.addEventListener("click", () => {
+      if (state.actionPolishLoading) return;
       state.actionPolishOpen = true;
       state.actionPolishSpin = Number(state.actionPolishSpin || 0) + 1;
       generateAiActionSuggestions();
@@ -1686,6 +1769,7 @@ function bindEvents() {
   const evidencePolishBtn = document.querySelector("#evidencePolishBtn");
   if (evidencePolishBtn) {
     evidencePolishBtn.addEventListener("click", () => {
+      if (state.evidencePolishLoading) return;
       state.evidencePolishOpen = true;
       state.evidencePolishSpin = Number(state.evidencePolishSpin || 0) + 1;
       generateAiIdentitySuggestions("evidence");
@@ -1695,6 +1779,7 @@ function bindEvents() {
   const futurePolishBtn = document.querySelector("#futurePolishBtn");
   if (futurePolishBtn) {
     futurePolishBtn.addEventListener("click", () => {
+      if (state.futurePolishLoading) return;
       state.futurePolishOpen = true;
       state.futurePolishSpin = Number(state.futurePolishSpin || 0) + 1;
       generateAiIdentitySuggestions("future");
