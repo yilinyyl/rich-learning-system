@@ -1,5 +1,5 @@
 const STORE_KEY = "simple-rich-learning-v1";
-const APP_VERSION = "2026-06-30.2";
+const APP_VERSION = "2026-06-30.3";
 const POLISH_MAX_ATTEMPTS = 3;
 const POLISH_TIMEOUT_MS = 18000;
 const POLISH_RETRY_DELAY_MS = 900;
